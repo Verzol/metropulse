@@ -1,0 +1,18 @@
+# Data
+data/
+*.csv
+*.parquet
+*.json
+
+# Python Environment
+venv/
+__pycache__
+*.pyc
+
+# Environment
+.env
+
+# Metadata from Spark/Jupyter
+.ipynb_checkpoints/
+spark-warehouse/
+metastore_db/
