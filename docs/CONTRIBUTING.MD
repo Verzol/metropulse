@@ -1,36 +1,41 @@
-# MetroPulse
+# MetroPulse Team Development Guidelines
 
-## Branching Strategy
-
-1. **`main`**: Chỉ chứa code đã chạy ổn định 100%. **Tuyệt đối không commit thẳng.**
-2. **`dev`**: Nhánh tích hợp. Mọi người gộp code vào đây để test độ tương thích.
-3. **`feature/<ten-chuc-nang>`**: Nhánh làm nhiệm vụ mới. 
-   - Ví dụ: `feature/spark-cleaning`, `feature/kafka-producer`.
-4. **`fix/<ten-loi>`**: Nhánh sửa lỗi khẩn cấp.
-   - Ví dụ: `fix/api-connection-timeout`.
+This document outlines the standard development workflow and rules to maintain code quality and organization.
 
 ---
 
-## Commit Message Convention
+## 1. Branching Strategy
 
-Chúng ta sử dụng chuẩn **Conventional Commits**. Cú pháp:
-`type(scope): description`
+We follow a structured branching model to ensure stability across the project:
 
-* **feat**: Thêm tính năng mới.
-* **fix**: Sửa lỗi.
-* **docs**: Cập nhật tài liệu (README, CONTRIBUTING).
-* **refactor**: Tối ưu code nhưng không thay đổi chức năng.
-* **chore**: Các việc vặt (cài thư viện, update .gitignore).
-
-*Ví dụ:* `feat(ingestion): add weather api producer script`
+*   **`main`**: Production-ready code only. **Direct commits to main are strictly prohibited.**
+*   **`dev`**: Integration branch. All features and fixes are merged here for compatibility testing.
+*   **`feature/<name>`**: For new tasks or features (e.g., `feature/spark-cleaning`, `feature/kafka-producer`).
+*   **`fix/<name>`**: For urgent bug fixes (e.g., `fix/api-connection-timeout`).
 
 ---
 
-## Pull Request Process (PR)
+## 2. Commit Message Convention
 
-Khi hoàn thành task trên nhánh cá nhân, hãy thực hiện các bước:
-1.  Kéo code mới nhất từ `dev` về nhánh của mình và xử lý conflict (nếu có).
-2.  Push nhánh lên GitHub.
-3.  Tạo Pull Request gộp vào `dev`.
-4.  **Bắt buộc:** Phải có ít nhất 1 thành viên khác vào Review và bấm **Approve** thì mới được gộp (Merge).
-5. **Môi trường:** Luôn cập nhật file `requirements.txt` hoặc `docker-compose.yml` nếu bạn thêm thư viện/dịch vụ mới.
+We adhere to the [Conventional Commits](https://www.conventionalcommits.org/) standard. This helps keep our git history clean. 
+Format: `<type>(<scope>): <description>`
+
+*   **`feat`**: New feature
+*   **`fix`**: Bug fix
+*   **`docs`**: Documentation updates (e.g., README, this file)
+*   **`refactor`**: Code optimization without changing functionality
+*   **`chore`**: Routine tasks, dependency updates (e.g., updating .gitignore, requirements)
+
+**Example:** `feat(ingestion): add weather api producer script`
+
+---
+
+## 3. Pull Request (PR) Workflow
+
+When you finish a task on your branch, please follow these steps:
+
+1.  **Sync**: Pull the latest code from `dev` into your personal branch and resolve any conflicts.
+2.  **Push**: Push your updated branch up to GitHub.
+3.  **Create PR**: Open a Pull Request to merge your branch into `dev`.
+4.  **Review (Mandatory)**: At least **one other team member** must review and **Approve** the PR before you can merge it.
+5.  **Environment Updates**: Always remember to update `requirements.txt` or `docker-compose.yml` if your work introduces new libraries or services.
