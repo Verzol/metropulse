@@ -1,18 +1,53 @@
-# Data
-data/
-*.csv
+# Data files
+data/raw/                          # Parquet taxi data (huge, exclude)
 *.parquet
-*.json
+*.xlsx
+*.xls
+
+# CSV: Exclude all EXCEPT taxi_zone_lookup.csv (needed for app)
+*.csv
+!data/taxi_zone_lookup.csv         # INCLUDE: NYC zone mapping (required)
 
 # Python Environment
 venv/
-__pycache__
+.venv/
+env/
+ENV/
+__pycache__/
 *.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
 
-# Environment
+# IDE and Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# Environment variables
 .env
+.env.local
+.env.*.local
 
-# Metadata from Spark/Jupyter
+# Metadata from Spark/Jupyter/Logs
 .ipynb_checkpoints/
 spark-warehouse/
 metastore_db/
+*.log
+*.logs
+
+# Docker volumes (local development)
+minio_data/
+
+# Credentials and sensitive data
+.aws/
+.ssh/
+*.key
+*.pem
