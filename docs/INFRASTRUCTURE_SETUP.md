@@ -69,7 +69,7 @@ MinIO login: admin / metropulse2026
 
 ```bash
 docker compose stop       # Dừng (giữ data)
-docker compose down -v    # Xóa tất cả (mất data)
+docker compose down -v    # Xóa tất cả (mất data) ==> KHÔNG DÙNG LỆNH NÀY
 docker compose restart    # Restart
 ```
 
