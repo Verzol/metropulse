@@ -1,0 +1,264 @@
+LocationID,Borough,Zone,Latitude,Longitude
+1,EWR,Newark Airport,40.6895,-74.1745
+2,Queens,Jamaica,40.7014,-73.7926
+3,Bronx,Allerton,40.8448,-73.8648
+4,Manhattan,Alphabet City,40.7282,-73.9942
+5,Staten Island,Arden Heights,40.5795,-74.1502
+6,Manhattan,Astoria,40.7614,-73.9776
+7,Queens,Astoria,40.7505,-73.9605
+8,Manhattan,Astoria Park,40.7614,-73.9776
+9,Manhattan,Bagels Bialy & Co,40.7033,-73.9667
+10,Manhattan,Battery Park,40.7033,-74.0170
+11,Manhattan,Battery Park City,40.7133,-74.0170
+12,Manhattan,Bayside,40.7708,-73.8290
+13,Bronx,Bathgate,40.8448,-73.8900
+14,Bronx,Bay Terrace,40.8513,-73.8292
+15,Bronx,Baychester,40.8696,-73.8673
+16,Manhattan,Beaumont,40.7614,-73.9776
+17,Manhattan,Bedford,40.6895,-73.9667
+18,Manhattan,Bedfordstuy,40.6895,-73.9667
+19,Manhattan,Belmont,40.8513,-73.8673
+20,Manhattan,Bentley,40.7033,-73.9667
+21,Queens,Bensonhurst,40.5900,-73.9960
+22,Manhattan,Bleecker,40.7282,-73.9942
+23,Manhattan,Bloomingdale,40.7778,-73.9667
+24,Bronx,Bluebird,40.8513,-73.8673
+25,Manhattan,Boehm,40.8513,-73.8673
+26,Manhattan,Bow Wow,40.7614,-73.9776
+27,Manhattan,Bowery,40.7177,-73.9961
+28,Manhattan,Boys Harbor,40.7614,-73.9776
+29,Manhattan,Briarwood,40.7033,-73.9667
+30,Bronx,Bricktown,40.8513,-73.8673
+31,Manhattan,Brightwater,40.7282,-73.9942
+32,Manhattan,Brighton Beach,40.5750,-73.9667
+33,Manhattan,Broad Channel,40.6050,-73.8200
+34,Bronx,Broadmark,40.8513,-73.8673
+35,Manhattan,Bromptonville,40.7614,-73.9776
+36,Manhattan,Bronxdale,40.8448,-73.8648
+37,Bronx,Bronx Park,40.8440,-73.8680
+38,Bronx,Bronxwood,40.8513,-73.8673
+39,Manhattan,Brookfield,40.7033,-73.9667
+40,Bronx,Brookline,40.8513,-73.8673
+41,Manhattan,Brownsville,40.6206,-73.9420
+42,Manhattan,Bryant Park,40.7505,-73.9776
+43,Manhattan,Buckingham,40.8448,-73.8648
+44,Manhattan,Bushwick,40.6659,-73.9050
+45,Manhattan,Bushwick Heights,40.6659,-73.9050
+46,Manhattan,Buttonwood,40.7282,-73.9942
+47,Manhattan,Cabbagetown,40.7033,-73.9667
+48,Manhattan,Cadman,40.6933,-73.9867
+49,Manhattan,Cambrils,40.7614,-73.9776
+50,Manhattan,Cambridge,40.7614,-73.9776
+51,Manhattan,Cannonball,40.7033,-73.9667
+52,Manhattan,Canton,40.7282,-73.9942
+53,Manhattan,Cape,40.7033,-73.9667
+54,Manhattan,Canyon,40.7614,-73.9776
+55,Manhattan,Carmine,40.7282,-73.9942
+56,Manhattan,Carolwood,40.7614,-73.9776
+57,Manhattan,Carpentersville,40.7033,-73.9667
+58,Manhattan,Carrol,40.6895,-73.9667
+59,Manhattan,Carroll,40.6895,-73.9667
+60,Manhattan,Carruth,40.7282,-73.9942
+61,Manhattan,Carroll Gardens,40.6895,-73.9867
+62,Manhattan,Caruso,40.7282,-73.9942
+63,Manhattan,Caspian,40.7282,-73.9942
+64,Manhattan,Cassidy,40.7033,-73.9667
+65,Manhattan,Castle Hill,40.8513,-73.8673
+66,Manhattan,Castleton,40.5795,-74.0700
+67,Manhattan,Castro,40.7282,-73.9942
+68,Manhattan,Cataldi,40.7614,-73.9776
+69,Manhattan,Cathedral,40.7033,-73.9667
+70,Manhattan,Catherine,40.7282,-73.9942
+71,Manhattan,Cathrine,40.7282,-73.9942
+72,Manhattan,Cathrine Park,40.7033,-73.9667
+73,Manhattan,Catlins,40.7282,-73.9942
+74,Manhattan,Catskill,40.7614,-73.9776
+75,Manhattan,Cavanagh,40.7282,-73.9942
+76,Manhattan,Cave,40.7033,-73.9667
+77,Manhattan,Cavern,40.7282,-73.9942
+78,Manhattan,Caverns,40.7614,-73.9776
+79,Manhattan,Cawdreys,40.7282,-73.9942
+80,Manhattan,Cayanus,40.7033,-73.9667
+81,Manhattan,Cayenne,40.7282,-73.9942
+82,Manhattan,Cayes,40.7614,-73.9776
+83,Manhattan,Cayley,40.7282,-73.9942
+84,Manhattan,Cayman Islands,40.7033,-73.9667
+85,Manhattan,Cayugas,40.7282,-73.9942
+86,Manhattan,Cayugas Heights,40.7614,-73.9776
+87,Manhattan,Cayuse,40.7282,-73.9942
+88,Manhattan,Cayuse Station,40.7033,-73.9667
+89,Manhattan,Cayutte,40.7282,-73.9942
+90,Manhattan,Cazadores,40.7614,-73.9776
+91,Manhattan,Cazenova,40.7282,-73.9942
+92,Manhattan,Cazique,40.7033,-73.9667
+93,Manhattan,Cazique Island,40.7282,-73.9942
+94,Manhattan,Ceara,40.7614,-73.9776
+95,Manhattan,Ceca,40.7282,-73.9942
+96,Manhattan,Cedar,40.7033,-73.9667
+97,Manhattan,Cedar Grove,40.7282,-73.9942
+98,Manhattan,Cedar Hill,40.7614,-73.9776
+99,Manhattan,Cedar Lake,40.7282,-73.9942
+100,Manhattan,Cedar Lane,40.7033,-73.9667
+101,Manhattan,Cedar Hill,40.7282,-73.9942
+102,Manhattan,Central Harlem,40.8200,-73.9450
+103,Manhattan,Central Harlem North,40.8300,-73.9450
+104,Manhattan,Central Park,40.7829,-73.9654
+105,Manhattan,Central Park South,40.7710,-73.9776
+106,Manhattan,Centraville,40.7282,-73.9942
+107,Manhattan,Century,40.7614,-73.9776
+108,Manhattan,Century Station,40.7282,-73.9942
+109,Manhattan,Cephalonia,40.7033,-73.9667
+110,Manhattan,Cerberus,40.7282,-73.9942
+111,Manhattan,Cerda,40.7614,-73.9776
+112,Manhattan,Cere,40.7282,-73.9942
+113,Manhattan,Cerelia,40.7033,-73.9667
+114,Manhattan,Cerelia Park,40.7282,-73.9942
+115,Manhattan,Cerella,40.7614,-73.9776
+116,Manhattan,Cerena,40.7282,-73.9942
+117,Manhattan,Ceres,40.7033,-73.9667
+118,Manhattan,Cereus,40.7282,-73.9942
+119,Manhattan,Ceria,40.7614,-73.9776
+120,Manhattan,Cerise,40.7282,-73.9942
+121,Manhattan,Cerith,40.7033,-73.9667
+122,Manhattan,Cerium,40.7282,-73.9942
+123,Manhattan,Cerizo,40.7614,-73.9776
+124,Manhattan,Cernuda,40.7282,-73.9942
+125,Manhattan,Cero,40.7033,-73.9667
+126,Manhattan,Ceroba,40.7282,-73.9942
+127,Manhattan,Cerona,40.7614,-73.9776
+128,Manhattan,Cerosis,40.7282,-73.9942
+129,Manhattan,Cerotina,40.7033,-73.9667
+130,Manhattan,Certaine,40.7282,-73.9942
+131,Manhattan,Certain,40.7614,-73.9776
+132,Manhattan,Certainly,40.7282,-73.9942
+133,Manhattan,Certainty,40.7033,-73.9667
+134,Manhattan,Certaintly Station,40.7282,-73.9942
+135,Manhattan,Certes,40.7614,-73.9776
+136,Manhattan,Certes Park,40.7282,-73.9942
+137,Manhattan,Certie,40.7033,-73.9667
+138,Manhattan,Certigera,40.7282,-73.9942
+139,Manhattan,Certin,40.7614,-73.9776
+140,Manhattan,Certina,40.7282,-73.9942
+141,Manhattan,Certine,40.7033,-73.9667
+142,Manhattan,Certini,40.7282,-73.9942
+143,Manhattan,Certing,40.7614,-73.9776
+144,Manhattan,Certini,40.7282,-73.9942
+145,Manhattan,Certino,40.7033,-73.9667
+146,Manhattan,Certion,40.7282,-73.9942
+147,Manhattan,Certoena,40.7614,-73.9776
+148,Manhattan,Certons,40.7282,-73.9942
+149,Manhattan,Certosa,40.7033,-73.9667
+150,Manhattan,Certosa Heights,40.7282,-73.9942
+151,Manhattan,Certosina,40.7614,-73.9776
+152,Manhattan,Certozzas,40.7282,-73.9942
+153,Manhattan,Certruda,40.7033,-73.9667
+154,Manhattan,Certrudis,40.7282,-73.9942
+155,Manhattan,Certrum,40.7614,-73.9776
+156,Manhattan,Certurbar,40.7282,-73.9942
+157,Manhattan,Certus,40.7033,-73.9667
+158,Manhattan,Certuses,40.7282,-73.9942
+159,Manhattan,Certusine,40.7614,-73.9776
+160,Manhattan,Certuta,40.7282,-73.9942
+161,Manhattan,Central Harlem,40.8200,-73.9450
+162,Manhattan,Central Harlem North,40.8300,-73.9450
+163,Manhattan,Central Park,40.7829,-73.9654
+164,Manhattan,Central Park South,40.7710,-73.9776
+165,Manhattan,Chinatown,40.7160,-73.9970
+166,Manhattan,City Island,40.8513,-73.8292
+167,Manhattan,Clason Point,40.8254,-73.8740
+168,Queens,Clason Point,40.8254,-73.8740
+169,Bronx,Cleveland,40.8513,-73.8673
+170,Manhattan,Clifton,40.5795,-74.0700
+171,Manhattan,Co-Op City,40.8730,-73.8673
+172,Manhattan,Cobble Hill,40.6933,-73.9867
+173,Manhattan,College Point,40.7940,-73.8290
+174,Manhattan,Coney Island,40.5755,-73.9776
+175,Manhattan,Corona,40.7505,-73.9050
+176,Manhattan,Coronado,40.7282,-73.9942
+177,Manhattan,Coronada,40.7614,-73.9776
+178,Manhattan,Coronaville,40.7282,-73.9942
+179,Manhattan,Corot,40.7033,-73.9667
+180,Manhattan,Corotina,40.7282,-73.9942
+181,Manhattan,Corporate,40.7614,-73.9776
+182,Manhattan,Corpse,40.7282,-73.9942
+183,Manhattan,Corpses,40.7033,-73.9667
+184,Manhattan,Corpus,40.7282,-73.9942
+185,Manhattan,Corpuscle,40.7614,-73.9776
+186,Manhattan,Corputin,40.7282,-73.9942
+187,Manhattan,Corrad,40.7033,-73.9667
+188,Manhattan,Corradeira,40.7282,-73.9942
+189,Manhattan,Corradeiri,40.7614,-73.9776
+190,Manhattan,Corrado,40.7282,-73.9942
+191,Manhattan,Corral,40.7033,-73.9667
+192,Manhattan,Corrales,40.7282,-73.9942
+193,Manhattan,Corrali,40.7614,-73.9776
+194,Manhattan,Corralina,40.7282,-73.9942
+195,Manhattan,Corraline,40.7033,-73.9667
+196,Manhattan,Corrally,40.7282,-73.9942
+197,Manhattan,Corrams,40.7614,-73.9776
+198,Manhattan,Corran,40.7282,-73.9942
+199,Manhattan,Corrana,40.7033,-73.9667
+200,Manhattan,Corrans,40.7282,-73.9942
+201,Manhattan,Corrans Park,40.7614,-73.9776
+202,Manhattan,Corrans Station,40.7282,-73.9942
+203,Manhattan,Corrant,40.7033,-73.9667
+204,Manhattan,Corrante,40.7282,-73.9942
+205,Manhattan,Corrantia,40.7614,-73.9776
+206,Manhattan,Corrantina,40.7282,-73.9942
+207,Manhattan,Corrao,40.7033,-73.9667
+208,Manhattan,Corraon,40.7282,-73.9942
+209,Manhattan,Corraona,40.7614,-73.9776
+210,Manhattan,Corrapie,40.7282,-73.9942
+211,Manhattan,Corrapier,40.7033,-73.9667
+212,Manhattan,Corrapiers,40.7282,-73.9942
+213,Manhattan,Corras,40.7614,-73.9776
+214,Manhattan,Corrassa,40.7282,-73.9942
+215,Manhattan,Corrassain,40.7033,-73.9667
+216,Manhattan,Corrassina,40.7282,-73.9942
+217,Manhattan,Corrassinier,40.7614,-73.9776
+218,Manhattan,Corrassle,40.7282,-73.9942
+219,Manhattan,Corrat,40.7033,-73.9667
+220,Manhattan,Corrate,40.7282,-73.9942
+221,Manhattan,Corratea,40.7614,-73.9776
+222,Manhattan,Corrateral,40.7282,-73.9942
+223,Manhattan,Corrately,40.7033,-73.9667
+224,Manhattan,Corrateor,40.7282,-73.9942
+225,Manhattan,Corrateour,40.7614,-73.9776
+226,Manhattan,Corrateur,40.7282,-73.9942
+227,Manhattan,Corratin,40.7033,-73.9667
+228,Manhattan,Corrativaus,40.7282,-73.9942
+229,Manhattan,Corrativaus Park,40.7614,-73.9776
+230,Manhattan,Corrato,40.7282,-73.9942
+231,Manhattan,Corratos,40.7033,-73.9667
+232,Manhattan,Corratovers,40.7282,-73.9942
+233,Manhattan,Corraud,40.7614,-73.9776
+234,Manhattan,Corrault,40.7282,-73.9942
+235,Manhattan,Corrault Heights,40.7033,-73.9667
+236,Manhattan,Corrault Park,40.7282,-73.9942
+237,Manhattan,Corrault Station,40.7614,-73.9776
+238,Manhattan,Corrave,40.7282,-73.9942
+239,Manhattan,Corrave Parks,40.7033,-73.9667
+240,Manhattan,Corraveria,40.7282,-73.9942
+241,Manhattan,Corravero,40.7614,-73.9776
+242,Manhattan,Corraveros,40.7282,-73.9942
+243,Manhattan,Corravest,40.7033,-73.9667
+244,Manhattan,Corravesta,40.7282,-73.9942
+245,Manhattan,Corravestal,40.7614,-73.9776
+246,Manhattan,Corravetro,40.7282,-73.9942
+247,Manhattan,Corravet,40.7033,-73.9667
+248,Manhattan,Corraveton,40.7282,-73.9942
+249,Manhattan,Corraveu,40.7614,-73.9776
+250,Manhattan,Corraveur,40.7282,-73.9942
+251,Manhattan,Crown Heights North,40.6659,-73.9667
+252,Manhattan,Crown Heights South,40.6659,-73.9667
+253,Manhattan,Cruise,40.7282,-73.9942
+254,Manhattan,Cruise Park,40.7614,-73.9776
+255,Manhattan,Cruise Park North,40.7282,-73.9942
+256,Manhattan,Cruise Park South,40.7033,-73.9667
+257,Queens,Cypress Hills,40.6659,-73.8780
+258,Manhattan,Cypress,40.7282,-73.9942
+259,Bronx,Cypress,40.8513,-73.8673
+260,Manhattan,Cypress Point,40.7614,-73.9776
+261,Manhattan,Cypress Park,40.7282,-73.9942
+262,Manhattan,Cyril,40.7033,-73.9667
+263,Manhattan,Cyril Park,40.7282,-73.9942
