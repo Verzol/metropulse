@@ -42,9 +42,28 @@ spark-warehouse/
 metastore_db/
 *.log
 *.logs
+logs/
+airflow/logs/
+airflow/*.pid
+tmp/
+temp/
+
+# Local AI/tooling metadata
+.codex/
+.agents/
+AGENTS.md
+
+# Pipeline runtime state
+.producer_checkpoint.json
+checkpoints/
+checkpoint/
+_spark_metadata/
+*.crc
 
 # Docker volumes (local development)
 minio_data/
+docker-data/
+volumes/
 
 # Credentials and sensitive data
 .aws/
