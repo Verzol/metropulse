@@ -34,7 +34,7 @@ Các thành phần chính:
 
 ## Tài Liệu Chính
 
-- [Setup Guide](docs/SETUP_GUIDE.md): hướng dẫn setup, cấu hình, chạy services và troubleshooting.
+- [Setup Guide](docs/SETUP_GUIDE.md): hướng dẫn SSH vào VM, làm chung trên repo, cấu hình, chạy services và troubleshooting.
 - [Progress](PROGRESS.md): trạng thái dự án, kế hoạch chạy và kết quả đã hoàn thành.
 - [Makefile Guide](docs/MAKEFILE_GUIDE.md): danh sách lệnh `make` dùng trong project.
 
