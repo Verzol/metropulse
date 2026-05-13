@@ -37,15 +37,18 @@ docker compose exec -T spark-master bash -c "
   # Execute spark-submit with Kafka and Hadoop packages
   /opt/spark/bin/spark-submit \
     --conf spark.jars.ivy=/tmp/ivy \
-    --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.4.3,org.apache.hadoop:hadoop-aws:3.3.4 \
+    --driver-memory 4G \
+    --executor-memory 8G \
+    --executor-cores 4 \
+    --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.1,org.apache.hadoop:hadoop-aws:3.3.4 \
     --master spark://spark-master:7077 \
     bronze_ingestion.py
 "
 
 echo ""
 echo "Bronze ingestion completed!"
+echo "Default mode uses BRONZE_TRIGGER_AVAILABLE_NOW=true, so the job exits after draining current Kafka offsets."
 echo ""
 echo "Check data in MinIO:"
-echo "   http://34.21.193.160:9001  (or http://localhost:9001 with SSH tunnel)"
+echo "   Console: http://localhost:9001 (or your VM external host if exposed)"
 echo "   Buckets: bronze/yellow_taxi/, bronze/green_taxi/, bronze/weather/"
-
