@@ -1,6 +1,6 @@
 # MetroPulse Setup Guide
 
-Tài liệu này hướng dẫn người mới clone repo, SSH vào VM, cấu hình `.env`, khởi động services và chạy pipeline MetroPulse.
+Tài liệu này hướng dẫn người mới SSH vào VM, làm chung trên repo đang chạy, cấu hình môi trường khi cần, kiểm tra Docker services và chạy pipeline MetroPulse.
 
 ## 1. Môi Trường Hiện Tại
 
@@ -57,7 +57,233 @@ Sau đó mở:
 
 Có thể truy cập trực tiếp bằng `http://<VM_EXTERNAL_IP>:<PORT>` nếu GCP firewall đã mở port tương ứng.
 
-## 3. Clone Và Cài Đặt
+## 3. Làm Chung Trên VM
+
+Phương án hiện tại của nhóm:
+
+```text
+Tất cả thành viên làm chung trên VM.
+Không clone thêm repo mới trên VM.
+Repo dùng chung: /home/verzol/metropulse
+Mỗi người dùng SSH user riêng và branch Git riêng.
+```
+
+Lý do chọn phương án này:
+
+- MinIO data, Docker volumes, Airflow metadata và checkpoint đã nằm trên VM hiện tại.
+- Không cần copy lại `.env`, raw data, MinIO volumes hoặc checkpoint sang workspace khác.
+- Tránh chạy trùng nhiều Docker Compose project gây tốn disk/RAM.
+- Cả nhóm kiểm tra cùng một pipeline state.
+
+### 3.1 Việc Nhóm Trưởng Cần Làm
+
+Với mỗi thành viên mới, nhóm trưởng cần:
+
+1. Nhận public SSH key của thành viên.
+2. Add SSH key vào GCP VM.
+3. Cho user đó quyền đi vào project folder.
+4. Cho user đó quyền chạy Docker.
+5. Add thành viên vào GitHub repo nếu repo private.
+
+Thành viên tạo SSH key trên máy cá nhân nếu chưa có:
+
+```bash
+ssh-keygen -t ed25519 -C "member_name"
+cat ~/.ssh/id_ed25519.pub
+```
+
+Nhóm trưởng add public key vào GCP:
+
+```text
+GCP Console
+-> Compute Engine
+-> VM instances
+-> chọn VM
+-> Edit
+-> SSH Keys
+-> Add item
+-> paste public key
+-> Save
+```
+
+Sau khi thành viên SSH vào được, nhóm trưởng cấp quyền trên VM. Thay `<member_user>` bằng username thật của thành viên:
+
+```bash
+sudo chmod o+x /home/verzol
+sudo usermod -aG docker <member_user>
+```
+
+Nếu thành viên cần sửa file trong repo dùng chung:
+
+```bash
+sudo apt install -y acl
+sudo setfacl -R -m u:<member_user>:rwx /home/verzol/metropulse
+sudo setfacl -R -d -m u:<member_user>:rwx /home/verzol/metropulse
+```
+
+Sau khi thêm vào group Docker, thành viên phải logout rồi SSH lại:
+
+```bash
+exit
+ssh <member_user>@<VM_EXTERNAL_IP>
+```
+
+### 3.2 Việc Thành Viên Cần Làm Lần Đầu
+
+SSH vào VM:
+
+```bash
+ssh <member_user>@<VM_EXTERNAL_IP>
+```
+
+Vào repo dùng chung:
+
+```bash
+cd /home/verzol/metropulse
+```
+
+Nếu Git báo `detected dubious ownership`, chạy:
+
+```bash
+git config --global --add safe.directory /home/verzol/metropulse
+```
+
+Kiểm tra quyền và trạng thái:
+
+```bash
+whoami
+pwd
+git status
+docker ps
+docker compose ps
+make status
+```
+
+Nếu `docker ps` báo permission denied, báo nhóm trưởng kiểm tra lại Docker group rồi logout/login SSH lại.
+
+### 3.3 Quy Tắc Làm Việc Chung
+
+Không sửa trực tiếp trên branch chính nếu không cần. Mỗi người tạo branch riêng:
+
+```bash
+git fetch
+git checkout -b feature/<short-task-name>
+```
+
+Ví dụ:
+
+```bash
+git checkout -b feature/gold-hourly-demand
+```
+
+Trước khi sửa code:
+
+```bash
+git status
+git pull
+```
+
+Sau khi sửa:
+
+```bash
+git status
+git diff
+```
+
+Không commit các file runtime:
+
+```text
+.env
+.producer_checkpoint.json
+airflow/logs/
+data/raw/
+__pycache__/
+MinIO/Docker volumes
+```
+
+Không tự ý chạy các lệnh destructive:
+
+```bash
+make clean-all
+docker compose down -v
+docker volume prune
+rm .producer_checkpoint.json
+```
+
+Các lệnh kiểm tra an toàn:
+
+```bash
+docker compose ps
+make status
+make airflow-dags
+docker compose logs airflow-webserver --tail=50
+docker compose logs spark-master --tail=50
+df -h .
+docker system df
+```
+
+Các lệnh pipeline nên báo nhóm trước khi chạy vì có thể tốn thời gian hoặc ghi dữ liệu:
+
+```bash
+make producer
+make bronze
+make silver
+make silver-core
+make silver-clean
+```
+
+Lệnh tương đối an toàn để kiểm tra Silver hiện tại:
+
+```bash
+make silver-quality
+```
+
+### 3.4 Mở UI Trên Máy Cá Nhân Của Thành Viên
+
+Từ máy cá nhân, mở SSH tunnel:
+
+```bash
+ssh \
+  -L 8088:localhost:8088 \
+  -L 9001:localhost:9001 \
+  -L 9090:localhost:9090 \
+  -L 8080:localhost:8080 \
+  -L 8081:localhost:8081 \
+  -L 8082:localhost:8082 \
+  <member_user>@<VM_EXTERNAL_IP>
+```
+
+Sau đó mở browser trên máy cá nhân:
+
+| Service | URL |
+|---|---|
+| Airflow | `http://localhost:8088` |
+| MinIO Console | `http://localhost:9001` |
+| Kafdrop | `http://localhost:9090` |
+| Spark Master | `http://localhost:8080` |
+| Spark Worker 1 | `http://localhost:8081` |
+| Spark Worker 2 | `http://localhost:8082` |
+
+Thông tin đăng nhập hiện tại lấy từ `.env` trên VM. Không đưa `.env` lên GitHub.
+
+### 3.5 Checklist Lần Đầu Cho Thành Viên
+
+```bash
+ssh <member_user>@<VM_EXTERNAL_IP>
+cd /home/verzol/metropulse
+git config --global --add safe.directory /home/verzol/metropulse
+git status
+docker ps
+docker compose ps
+make status
+make airflow-dags
+```
+
+Nếu tất cả lệnh trên chạy được, thành viên đã sẵn sàng làm việc trên VM chung.
+
+## 4. Clone Và Cài Đặt Khi Setup VM Mới
+
+Không dùng phần này nếu đang làm trên VM chung hiện tại. Phần này chỉ dành cho trường hợp setup một máy mới từ đầu.
 
 ```bash
 git clone <repo-url>
@@ -74,7 +300,7 @@ Hoặc:
 make install
 ```
 
-## 4. Cấu Hình `.env`
+## 5. Cấu Hình `.env`
 
 Tạo file local:
 
@@ -116,7 +342,7 @@ s3a://silver/quality_reports/silver_core_quality/latest/
 
 Không commit `.env`.
 
-## 5. Khởi Động Services
+## 6. Khởi Động Services
 
 ```bash
 make start
@@ -147,7 +373,7 @@ AIRFLOW_ADMIN_USERNAME
 AIRFLOW_ADMIN_PASSWORD
 ```
 
-## 6. Tải Dữ Liệu
+## 7. Tải Dữ Liệu
 
 Tải NYC taxi parquet data:
 
@@ -158,7 +384,7 @@ chmod +x download_data.sh
 
 Full dataset hiện tại dùng 48 parquet files cho yellow/green taxi giai đoạn 2023-2024.
 
-## 7. Chạy Pipeline
+## 8. Chạy Pipeline
 
 Weather producer:
 
@@ -194,7 +420,7 @@ make silver-quality
 make silver-clean
 ```
 
-## 8. Chạy Silver Qua Airflow
+## 9. Chạy Silver Qua Airflow
 
 Mở:
 
@@ -216,7 +442,7 @@ silver -> silver-core -> silver-quality -> silver-clean
 
 Airflow chỉ orchestrate. Spark vẫn xử lý dữ liệu lớn.
 
-## 9. Trạng Thái Silver Hiện Tại
+## 10. Trạng Thái Silver Hiện Tại
 
 Silver Layer đã hoàn thành Phase 2.
 
@@ -249,7 +475,7 @@ Với bảng analytics/ML sạch, lọc:
 is_gold_candidate = true
 ```
 
-## 10. Runtime State
+## 11. Runtime State
 
 ### Producer checkpoint
 
@@ -275,7 +501,7 @@ Không xóa checkpoint trong MinIO nếu không muốn reset Structured Streamin
 s3a://bronze/checkpoints/
 ```
 
-## 11. Troubleshooting
+## 12. Troubleshooting
 
 Kiểm tra services:
 
@@ -320,7 +546,7 @@ docker system df
 
 Không chạy `docker volume prune` nếu còn cần dữ liệu MinIO/Airflow Postgres.
 
-## 12. Cleanup
+## 13. Cleanup
 
 Dừng service nhưng giữ data:
 
@@ -336,7 +562,7 @@ make clean-all
 
 `make clean-all` có tính phá hủy, chỉ dùng khi muốn reset môi trường.
 
-## 13. Tài Liệu Liên Quan
+## 14. Tài Liệu Liên Quan
 
 - [Makefile Guide](MAKEFILE_GUIDE.md)
 - [Progress](../PROGRESS.md)
