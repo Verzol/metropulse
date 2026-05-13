@@ -1,4 +1,4 @@
-.PHONY: help start stop restart logs producer bronze weather clean venv install
+.PHONY: help start stop restart logs producer bronze silver silver-core silver-quality silver-clean weather clean venv install airflow-init airflow-up airflow-down airflow-logs airflow-dags
 
 # Default target
 help:
@@ -10,15 +10,22 @@ help:
 	@echo "  make install       - Install Python dependencies"
 	@echo ""
 	@echo "Docker & Services:"
-	@echo "  make start         - Start all Docker services (Kafka, MinIO, Spark, etc.)"
+	@echo "  make start         - Start all Docker services (Kafka, MinIO, Spark, Airflow, etc.)"
 	@echo "  make stop          - Stop all Docker services"
 	@echo "  make restart       - Restart all services"
 	@echo "  make logs          - View Docker service logs"
+	@echo "  make airflow-init  - Initialize Airflow metadata DB and admin user"
+	@echo "  make airflow-up    - Start Airflow webserver and scheduler"
+	@echo "  make airflow-logs  - View Airflow logs"
 	@echo ""
 	@echo "Data Pipeline:"
 	@echo "  make producer      - Stream NYC taxi data to Kafka"
 	@echo "  make weather       - Stream NYC weather data (Open-Meteo API) to Kafka"
 	@echo "  make bronze        - Ingest Kafka → MinIO (Bronze layer)"
+	@echo "  make silver        - Build Silver taxi-weather parquet from Bronze"
+	@echo "  make silver-core   - Build compact Silver core parquet from existing Silver"
+	@echo "  make silver-quality - Run Silver Core data quality checks"
+	@echo "  make silver-clean  - Build cleaned Silver dataset from Silver Core"
 	@echo ""
 	@echo "Cleanup:"
 	@echo "  make clean         - Stop services (keep data)"
@@ -26,16 +33,18 @@ help:
 	@echo ""
 	@echo "URLs (Local/Docker):"
 	@echo "  Kafka:       localhost:9092"
-	@echo "  MinIO:       http://localhost:9001 (admin/metropulse2026)"
+	@echo "  MinIO:       http://localhost:9001 (credentials from .env)"
 	@echo "  Spark:       http://localhost:8080"
+	@echo "  Airflow:     http://localhost:8088 (default admin from .env)"
 	@echo ""
-	@echo "URLs (GCP VM - 34.21.193.160):"
-	@echo "  MinIO:       http://34.21.193.160:9001 (admin/metropulse2026)"
-	@echo "  Spark:       http://34.21.193.160:8080"
+	@echo "URLs (GCP VM):"
+	@echo "  MinIO:       http://<VM_EXTERNAL_IP>:9001"
+	@echo "  Spark:       http://<VM_EXTERNAL_IP>:8080"
+	@echo "  Airflow:     http://<VM_EXTERNAL_IP>:8088"
 	@echo ""
 	@echo "Examples:"
 	@echo "  # Full pipeline:"
-	@echo "  make start && make weather && make producer && make bronze"
+	@echo "  make start && make weather && make producer && make bronze && make silver"
 	@echo ""
 	@echo "  # Just weather data:"
 	@echo "  make start && make weather"
@@ -59,13 +68,15 @@ start:
 	docker compose ps
 	@echo ""
 	@echo "URLs:"
-	@echo "  GCP (34.21.193.160):"
-	@echo "    MinIO:  http://34.21.193.160:9001"
-	@echo "    Spark:  http://34.21.193.160:8080"
+	@echo "  GCP VM:"
+	@echo "    MinIO:  http://<VM_EXTERNAL_IP>:9001"
+	@echo "    Spark:  http://<VM_EXTERNAL_IP>:8080"
+	@echo "    Airflow: http://<VM_EXTERNAL_IP>:8088"
 	@echo ""
 	@echo "  Local/SSH Tunnel:"
 	@echo "    MinIO:  http://localhost:9001"
 	@echo "    Spark:  http://localhost:8080"
+	@echo "    Airflow: http://localhost:8088"
 
 stop:
 	@echo "Stopping Docker services..."
@@ -77,6 +88,25 @@ restart: stop start
 
 logs:
 	docker compose logs -f
+
+airflow-init:
+	@echo "Initializing Airflow metadata DB and admin user..."
+	docker compose up airflow-init
+
+airflow-up:
+	@echo "Starting Airflow webserver and scheduler..."
+	docker compose up -d airflow-webserver airflow-scheduler
+	@echo "Airflow UI: http://localhost:8088"
+
+airflow-down:
+	@echo "Stopping Airflow webserver and scheduler..."
+	docker compose stop airflow-webserver airflow-scheduler
+
+airflow-logs:
+	docker compose logs -f airflow-webserver airflow-scheduler
+
+airflow-dags:
+	docker compose exec airflow-webserver airflow dags list
 
 clean: stop
 	@echo "Services stopped. Data preserved."
@@ -97,6 +127,22 @@ weather:
 bronze:
 	@echo "Starting Bronze layer ingestion..."
 	./scripts/run_bronze_docker.sh
+
+silver:
+	@echo "Starting Silver layer enrichment..."
+	./scripts/run_silver_docker.sh
+
+silver-core:
+	@echo "Starting Silver core build..."
+	./scripts/run_silver_core_docker.sh
+
+silver-quality:
+	@echo "Starting Silver quality checks..."
+	./scripts/run_silver_quality_docker.sh
+
+silver-clean:
+	@echo "Starting Silver clean build..."
+	./scripts/run_silver_clean_docker.sh
 
 # Status check
 status:
