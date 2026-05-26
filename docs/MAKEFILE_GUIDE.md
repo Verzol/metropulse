@@ -130,7 +130,7 @@ Nếu đang làm từ máy cá nhân qua GCP VM, nên mở các URL này bằng 
 - `s3a://silver/taxi_weather_trips_clean/` (parquet)
 - `s3a://silver/quality_reports/silver_core_quality/latest/` (json)
 
-Gold layer nên đọc từ `s3a://silver/taxi_weather_trips_clean/` và filter `is_gold_candidate = true` cho analytics/ML sạch.
+Gold layer được thiết kế đọc từ `s3a://silver/hourly_weather/` và `s3a://silver/taxi_weather_trips_core/`. Khi tạo bảng ML hoặc KPI loại outlier, Gold transform cần lọc bằng các validity flags của Core và xử lý nullable fields một cách tường minh.
 
 ## Troubleshooting
 

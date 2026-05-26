@@ -64,6 +64,33 @@ Cleaning-rule invariants trên Clean snapshot:
 
 Kết luận: rules imputation được áp dụng nhất quán trên Clean snapshot đang lưu. `airport_fee` thiếu rất nhiều là dự kiến khi schema green taxi không có field này; missing flag cần được giữ làm tín hiệu thay vì diễn giải như zero fee từ nguồn.
 
+### Gold Source Readiness: Hourly Weather Và Taxi Weather Core
+
+Thiết kế Gold hiện tại chọn hai nguồn trực tiếp:
+
+```text
+s3a://silver/hourly_weather/
+s3a://silver/taxi_weather_trips_core/
+```
+
+| Kiểm chứng | Kết quả |
+|---|---:|
+| `hourly_weather` rows | 17,542 |
+| Distinct `weather_hour` | 17,542 |
+| Duplicate `weather_hour` groups | 0 |
+| Null weather feature rows trong `hourly_weather` | 0 |
+| `taxi_weather_trips_core` rows | 80,922,997 |
+| Duplicate Core trip-key groups | 0 |
+| Null critical Core fact/weather rows | 0 |
+| Core rows không match `weather_hour` hiện tại | 0 |
+| Core rows lệch weather features sau khi cast weather về Core schema | 0 |
+| Core outlier rows | 2,650,246 |
+| Core non-outlier rows | 78,272,751 |
+
+Weather dùng kiểu `double`, trong khi Core lưu các numeric weather features theo kiểu compact như `float`/`smallint`. Vì vậy phép đối chiếu tính nhất quán được thực hiện sau khi cast weather về schema Core; sau chuẩn hóa kiểu dữ liệu, toàn bộ Core rows khớp hourly weather hiện tại.
+
+Kết luận: hai bảng đạt điều kiện dữ liệu để làm nguồn cho Gold. `hourly_weather` có grain một row mỗi giờ và Core có fact schema gọn, không null critical, không duplicate business key, không lệch weather dimension. Core đã chứa weather features khớp với dimension, nên không cần join lại weather vào từng trip nếu Gold chỉ sử dụng các feature đó; `hourly_weather` phù hợp khi tạo canonical hourly timeline hoặc aggregate weather riêng. Tuy nhiên Core chưa phải dataset đã loại outlier hoặc impute nullable operational fields; Gold transform phải ghi rõ rule lọc và null handling theo mục tiêu BI/ML.
+
 ## Phát Hiện Cần Xử Lý
 
 `silver/taxi_weather_trips` hiện có `60,521,651` rows, trong khi Core và Clean đều có `80,922,997` rows. Chênh lệch `20,401,346` rows cho thấy Silver enriched và downstream Core/Clean/quality report không thuộc cùng một lần materialization hiện tại.
@@ -73,7 +100,7 @@ Do đó:
 - `68` quality checks pass chỉ áp dụng cho Core snapshot đang lưu, không chứng minh Core khớp với Silver enriched hiện tại.
 - `78,272,751` Gold candidates là proof của Clean snapshot đang lưu, chưa được phép diễn giải là kết quả của Silver enriched `60,521,651` rows.
 - Notebook `03` đã được sửa để báo `fail_outputs_not_same_snapshot` khi mismatch này xảy ra.
-- Trước khi dùng số liệu cho dashboard/ML, cần rebuild `silver-core`, `silver-quality`, `silver-clean` từ Silver enriched hiện tại, hoặc giữ rõ nhãn snapshot cũ trong báo cáo.
+- Với thiết kế Gold mới, compatibility giữa `hourly_weather` và Core đã được chứng minh trực tiếp. Tuy vậy, để lineage end-to-end không gây tranh luận khi review, nên rebuild `silver-core` và chạy lại quality checks sau lần materialize enriched gần nhất trước khi ghi Gold output chính thức.
 
 ## Phạm Vi Gold
 
@@ -86,4 +113,4 @@ Tại thời điểm kiểm chứng, các path sau chưa tồn tại:
 | `pickup_forecast_dataset` | Missing |
 | `borough_traffic_aggregation` | Missing |
 
-Gold layer chưa được triển khai trong snapshot hiện tại, nên không có notebook Gold trong phạm vi EDA nộp lần này. Chỉ số `is_gold_candidate` ở Silver Clean được giữ như bằng chứng về tính sẵn sàng của dữ liệu đầu vào cho bước Gold trong tương lai, không được diễn giải là kết quả Gold đã materialize.
+Gold layer chưa được triển khai trong snapshot hiện tại, nên không có notebook Gold trong phạm vi EDA nộp lần này. Nguồn đầu vào đã được chọn và kiểm chứng cho bước triển khai kế tiếp là `hourly_weather` và `taxi_weather_trips_core`; số liệu Clean/`is_gold_candidate` được giữ như bằng chứng phụ về tác động của policy loại outlier, không phải source contract của Gold.

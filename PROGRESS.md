@@ -105,7 +105,7 @@ s3a://silver/taxi_weather_trips_clean/
 s3a://silver/quality_reports/silver_core_quality/latest/
 ```
 
-Kết quả kiểm tra gần nhất:
+Quality artifact đang lưu của Core/Clean snapshot:
 
 ```text
 Silver Core quality report: _SUCCESS
@@ -113,6 +113,22 @@ Quality failed checks: 0
 Silver Clean rows: 80,922,997
 Gold candidate rows: 78,272,751
 Non-candidate rows: 2,650,246
+```
+
+Lưu ý: artifact này chứng minh chất lượng nội tại của Core/Clean snapshot đã ghi, nhưng không chứng minh cùng lần materialization với `taxi_weather_trips` hiện tại; EDA đã phát hiện row-count mismatch giữa enriched và Core.
+
+Kiểm chứng hai bảng được chọn làm nguồn Gold ngày `2026-05-26`:
+
+```text
+hourly_weather rows / distinct weather hours: 17,542 / 17,542
+hourly_weather duplicate hours: 0
+hourly_weather critical weather nulls: 0
+taxi_weather_trips_core rows: 80,922,997
+taxi_weather_trips_core duplicate trip-key groups: 0
+taxi_weather_trips_core critical nulls: 0
+Core rows không tìm thấy weather_hour tương ứng: 0
+Core/weather feature mismatches sau khi cast về Core schema: 0
+Core outlier rows cần policy ở Gold: 2,650,246
 ```
 
 Dung lượng Silver trong MinIO tại thời điểm kiểm tra:
@@ -194,17 +210,24 @@ make silver-clean
 
 ## 4. Handoff Sang Gold Layer
 
-Gold Layer nên đọc từ Silver Clean:
+Nguồn dữ liệu được chọn cho Gold Layer:
 
 ```text
-s3a://silver/taxi_weather_trips_clean/
+s3a://silver/hourly_weather/
+s3a://silver/taxi_weather_trips_core/
 ```
 
-Với analytics/ML cần dữ liệu sạch:
+`hourly_weather` là dimension theo `weather_hour`, phù hợp cho time-series/weather aggregates và có đúng một row mỗi giờ. `taxi_weather_trips_core` là trip-level fact compact đã có các weather features và outlier flags, phù hợp để tạo demand features phân tán bằng Spark.
 
-```text
-is_gold_candidate = true
-```
+Vì Core đã mang sẵn weather features khớp với `hourly_weather`, Gold không cần join lại dimension này vào mọi trip chỉ để lấy lại cùng các cột. `hourly_weather` nên được dùng như canonical hourly dimension khi tạo timeline đủ giờ, bảng weather-only hoặc feature aggregates theo giờ.
+
+Core không chứa các cột imputation/missing flags của Silver Clean. Do đó Gold transform phải khai báo rõ policy:
+
+- Với bảng KPI phản ánh toàn bộ trips hợp lệ theo critical schema, có thể giữ toàn bộ Core rows và phân tích riêng `is_outlier_trip`.
+- Với bảng ML hoặc KPI cần loại records bất thường, lọc `is_outlier_trip = false` cùng các validity flags; snapshot hiện tại còn `78,272,751` rows sau policy này.
+- Với feature dùng `passenger_count`, `ratecode_id`, `payment_type`, `congestion_surcharge` hoặc `airport_fee`, Gold phải xử lý null hoặc tạo missing indicators tường minh.
+
+Hai nguồn đã khớp weather features sau khi chuẩn hóa kiểu dữ liệu (`hourly_weather` lưu numeric dạng `double`, Core lưu dạng `float`/`smallint`). Tuy nhiên Core được materialize ngày `2026-05-13` và weather ngày `2026-05-20`; trước mốc nộp hoặc chạy Gold chính thức nên chạy lại chuỗi Silver liên quan để có lineage cùng một run.
 
 Gold output dự kiến:
 
@@ -220,10 +243,11 @@ Gold nên dùng Spark, không dùng Pandas cho dữ liệu lớn.
 ## 5. Việc Cần Làm Tiếp
 
 1. Trigger Airflow DAG `metropulse_silver_pipeline` một lần để xác nhận orchestration end-to-end.
-2. Tạo Gold transform đọc từ `taxi_weather_trips_clean`.
-3. Bổ sung Gold quality checks sau khi có feature tables.
-4. Cân nhắc tăng VM disk lên 150GB-200GB trước khi chạy nhiều Gold/ML jobs.
-5. Sau khi Gold tables ổn định, cân nhắc thêm Hive Metastore hoặc Trino nếu team cần query theo table catalog.
+2. Đồng bộ lại Silver outputs bằng một lần chạy end-to-end trước khi materialize Gold chính thức.
+3. Tạo Gold transform đọc từ `hourly_weather` và `taxi_weather_trips_core`, kèm policy outlier/null rõ ràng.
+4. Bổ sung Gold quality checks sau khi có feature tables.
+5. Cân nhắc tăng VM disk lên 150GB-200GB trước khi chạy nhiều Gold/ML jobs.
+6. Sau khi Gold tables ổn định, cân nhắc thêm Hive Metastore hoặc Trino nếu team cần query theo table catalog.
 
 ## 6. Ghi Chú Git
 

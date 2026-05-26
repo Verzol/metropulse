@@ -456,24 +456,32 @@ s3a://silver/taxi_weather_trips_clean/
 s3a://silver/quality_reports/silver_core_quality/latest/
 ```
 
-Quality report mới nhất:
+Quality artifact đang lưu của Core snapshot:
 
 ```text
 _SUCCESS
 0 failed checks
 ```
 
-Gold nên đọc từ:
+Artifact này áp dụng cho Core snapshot đã ghi; EDA hiện tại đã phát hiện Core không cùng row-count snapshot với `taxi_weather_trips` mới hơn. Khi handoff Gold chính thức, chạy lại Silver/Core quality theo cùng một pipeline run.
+
+Gold nên đọc từ hai nguồn:
 
 ```text
-s3a://silver/taxi_weather_trips_clean/
+s3a://silver/hourly_weather/
+s3a://silver/taxi_weather_trips_core/
 ```
 
-Với bảng analytics/ML sạch, lọc:
+`hourly_weather` giữ weather dimension theo giờ; `taxi_weather_trips_core` giữ trip-level facts và weather features đã cast gọn. Với bảng ML hoặc KPI cần loại outlier, áp dụng:
 
 ```text
-is_gold_candidate = true
+is_outlier_trip = false
+is_valid_distance = true
+is_valid_fare = true
+is_valid_total_amount = true
 ```
+
+Các field vận hành còn nullable trong Core phải được impute hoặc giữ missing indicator trong Gold transform nếu được dùng làm feature.
 
 ## 11. Runtime State
 
