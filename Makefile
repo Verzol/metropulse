@@ -1,4 +1,4 @@
-.PHONY: help start stop restart logs producer bronze silver silver-core silver-quality silver-clean weather clean venv install airflow-init airflow-up airflow-down airflow-logs airflow-dags
+.PHONY: help start stop restart logs producer bronze silver silver-core silver-quality silver-clean gold gold-quality gold-dashboard weather clean venv install airflow-init airflow-up airflow-down airflow-logs airflow-dags
 
 # Default target
 help:
@@ -26,6 +26,9 @@ help:
 	@echo "  make silver-core   - Build compact Silver core parquet from existing Silver"
 	@echo "  make silver-quality - Run Silver Core data quality checks"
 	@echo "  make silver-clean  - Build cleaned Silver dataset from Silver Core"
+	@echo "  make gold          - Build Gold ML-ready parquet datasets from Silver Core"
+	@echo "  make gold-quality  - Run Gold data quality checks"
+	@echo "  make gold-dashboard - Build Gold aggregate dashboard marts"
 	@echo ""
 	@echo "Cleanup:"
 	@echo "  make clean         - Stop services (keep data)"
@@ -143,6 +146,18 @@ silver-quality:
 silver-clean:
 	@echo "Starting Silver clean build..."
 	./scripts/run_silver_clean_docker.sh
+
+gold:
+	@echo "Starting Gold layer build..."
+	./scripts/run_gold_docker.sh
+
+gold-quality:
+	@echo "Starting Gold quality checks..."
+	./scripts/run_gold_quality_docker.sh
+
+gold-dashboard:
+	@echo "Starting Gold dashboard marts build..."
+	./scripts/run_gold_dashboard_docker.sh
 
 # Status check
 status:
