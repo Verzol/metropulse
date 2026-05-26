@@ -153,12 +153,83 @@ Cleaning rules hiện tại:
   - `airport_fee_clean`: null -> `0.00`;
 - thêm `is_gold_candidate` để Gold/ML lọc trips hợp lệ, không outlier.
 
+### Gold Layer
+
+Gold Layer đã hoàn thành phần ML-ready datasets, quality checks và dashboard marts.
+
+Đã có các job:
+
+| Job | File |
+|---|---|
+| Gold transform | `src/processing/gold_transform.py` |
+| Gold quality check | `src/quality/gold_quality_check.py` |
+| Gold dashboard marts | `src/processing/gold_dashboard_marts.py` |
+
+Output hiện có trong MinIO:
+
+```text
+s3a://gold/gold_demand_features/
+s3a://gold/gold_fare_tip_features/
+s3a://gold/quality_reports/gold_quality/latest/
+s3a://gold/dashboard_hourly_demand_kpi/
+s3a://gold/dashboard_zone_summary/
+s3a://gold/dashboard_payment_tip_summary/
+```
+
+Quality artifact đang lưu của Gold snapshot:
+
+```text
+Gold quality report: _SUCCESS
+Quality checks: 73
+Quality failed checks: 0
+```
+
+Kiểm chứng các bảng Gold ngày `2026-05-26`:
+
+| Dataset | Rows | Size | Files | Partition directories |
+|---|---:|---:|---:|---:|
+| `gold_demand_features` | 1,977,231 | 11.19 MB | 25 | 24 |
+| `gold_fare_tip_features` | 78,079,876 | 734.90 MB | 25 | 24 |
+| `quality_reports/gold_quality/latest` | 73 quality checks | 16.29 KB | 2 | 0 |
+| `dashboard_hourly_demand_kpi` | 17,542 | 546.59 KB | 25 | 24 |
+| `dashboard_zone_summary` | 263 | 18.10 KB | 2 | 0 |
+| `dashboard_payment_tip_summary` | 160 | 107.75 KB | 25 | 24 |
+
+Dung lượng Gold trong MinIO tại thời điểm kiểm tra:
+
+```text
+gold_demand_features              11.19 MB
+gold_fare_tip_features            734.90 MB
+dashboard_hourly_demand_kpi       546.59 KB
+dashboard_zone_summary            18.10 KB
+dashboard_payment_tip_summary     107.75 KB
+quality_reports                   16.29 KB
+```
+
+Gold rules hiện tại:
+
+- đọc từ `s3a://silver/taxi_weather_trips_core/`;
+- lọc trips hợp lệ bằng `is_valid_distance = true`, `is_valid_fare = true`, `is_outlier_trip = false`;
+- tạo `GOLD_DEMAND_FEATURES` với grain `pu_location_id x pickup_hour` cho demand prediction;
+- tạo `GOLD_FARE_TIP_FEATURES` với grain một dòng là một taxi trip hợp lệ cho fare/tip estimation;
+- loại fare/tip outlier bằng policy `2.5 <= fare_amount <= 300`, `trip_distance > 0`, `tip_amount >= 0`, `tip_percent <= 100`;
+- tạo dashboard marts đã aggregate sẵn để Power BI không phải đọc trực tiếp bảng trip-level lớn;
+- ghi tất cả outputs ở dạng Parquet dataset trong bucket `gold`, không tạo managed table trong SQL/metastore.
+
+Trạng thái phục vụ Hive:
+
+- Gold đã sẵn sàng để đăng ký Hive external tables.
+- Các bảng partition theo `pickup_year_month`: `gold_demand_features`, `gold_fare_tip_features`, `dashboard_hourly_demand_kpi`, `dashboard_payment_tip_summary`.
+- Bảng không partition: `dashboard_zone_summary`.
+- Sau khi tạo external tables, cần chạy `MSCK REPAIR TABLE` cho các bảng có partition.
+
 ### Airflow
 
 Đã có DAG:
 
 ```text
 dags/metropulse_silver_pipeline_dag.py
+dags/metropulse_gold_pipeline_dag.py
 ```
 
 Flow hiện tại:
@@ -177,7 +248,20 @@ start
 
 Airflow chỉ orchestrate shell scripts. Spark vẫn xử lý dữ liệu lớn.
 
-Trước khi chuyển hẳn sang Gold, nên trigger DAG này một lần trên Airflow UI để có mốc end-to-end successful run.
+Gold flow:
+
+```text
+start
+-> validate_project_root
+-> validate_docker_access
+-> check_required_services
+-> run_gold_transform
+-> run_gold_quality_check
+-> run_gold_dashboard_marts
+-> finish
+```
+
+Trước khi handoff chính thức, nên trigger DAG này một lần trên Airflow UI để có mốc end-to-end successful run.
 
 ## 3. Lệnh Chạy Chính
 
@@ -199,6 +283,9 @@ make silver
 make silver-core
 make silver-quality
 make silver-clean
+make gold
+make gold-quality
+make gold-dashboard
 ```
 
 Nếu Silver Core đã có sẵn và chỉ muốn chạy Phase 2:
@@ -210,44 +297,52 @@ make silver-clean
 
 ## 4. Handoff Sang Gold Layer
 
-Nguồn dữ liệu được chọn cho Gold Layer:
+Nguồn dữ liệu chính cho Gold Layer:
 
 ```text
-s3a://silver/hourly_weather/
 s3a://silver/taxi_weather_trips_core/
 ```
 
-`hourly_weather` là dimension theo `weather_hour`, phù hợp cho time-series/weather aggregates và có đúng một row mỗi giờ. `taxi_weather_trips_core` là trip-level fact compact đã có các weather features và outlier flags, phù hợp để tạo demand features phân tán bằng Spark.
-
-Vì Core đã mang sẵn weather features khớp với `hourly_weather`, Gold không cần join lại dimension này vào mọi trip chỉ để lấy lại cùng các cột. `hourly_weather` nên được dùng như canonical hourly dimension khi tạo timeline đủ giờ, bảng weather-only hoặc feature aggregates theo giờ.
-
-Core không chứa các cột imputation/missing flags của Silver Clean. Do đó Gold transform phải khai báo rõ policy:
-
-- Với bảng KPI phản ánh toàn bộ trips hợp lệ theo critical schema, có thể giữ toàn bộ Core rows và phân tích riêng `is_outlier_trip`.
-- Với bảng ML hoặc KPI cần loại records bất thường, lọc `is_outlier_trip = false` cùng các validity flags; snapshot hiện tại còn `78,272,751` rows sau policy này.
-- Với feature dùng `passenger_count`, `ratecode_id`, `payment_type`, `congestion_surcharge` hoặc `airport_fee`, Gold phải xử lý null hoặc tạo missing indicators tường minh.
-
-Hai nguồn đã khớp weather features sau khi chuẩn hóa kiểu dữ liệu (`hourly_weather` lưu numeric dạng `double`, Core lưu dạng `float`/`smallint`). Tuy nhiên Core được materialize ngày `2026-05-13` và weather ngày `2026-05-20`; trước mốc nộp hoặc chạy Gold chính thức nên chạy lại chuỗi Silver liên quan để có lineage cùng một run.
-
-Gold output dự kiến:
+Gold output sẵn sàng handoff:
 
 ```text
-s3a://gold/hourly_demand_features/
-s3a://gold/zone_weather_correlation/
-s3a://gold/pickup_forecast_dataset/
-s3a://gold/borough_traffic_aggregation/
+s3a://gold/gold_demand_features/
+s3a://gold/gold_fare_tip_features/
+s3a://gold/quality_reports/gold_quality/latest/
+s3a://gold/dashboard_hourly_demand_kpi/
+s3a://gold/dashboard_zone_summary/
+s3a://gold/dashboard_payment_tip_summary/
 ```
 
-Gold nên dùng Spark, không dùng Pandas cho dữ liệu lớn.
+Lệnh chạy chính:
+
+```bash
+make gold
+make gold-quality
+make gold-dashboard
+```
+
+Trạng thái hiện tại:
+
+```text
+Gold transform: done
+Gold quality: pass 73/73
+Gold dashboard marts: done
+Hive external table registration: ready
+```
+
+Ghi chú handoff: Gold là Parquet dataset trên MinIO, nên bước tiếp theo là tạo Hive external tables trỏ tới các path trên. Không cần tạo managed table hoặc copy dữ liệu sang nơi khác.
 
 ## 5. Việc Cần Làm Tiếp
 
 1. Trigger Airflow DAG `metropulse_silver_pipeline` một lần để xác nhận orchestration end-to-end.
-2. Đồng bộ lại Silver outputs bằng một lần chạy end-to-end trước khi materialize Gold chính thức.
-3. Tạo Gold transform đọc từ `hourly_weather` và `taxi_weather_trips_core`, kèm policy outlier/null rõ ràng.
-4. Bổ sung Gold quality checks sau khi có feature tables.
-5. Cân nhắc tăng VM disk lên 150GB-200GB trước khi chạy nhiều Gold/ML jobs.
-6. Sau khi Gold tables ổn định, cân nhắc thêm Hive Metastore hoặc Trino nếu team cần query theo table catalog.
+2. Đồng bộ lại Silver outputs bằng một lần chạy end-to-end trước mốc nộp nếu cần lineage cùng một run.
+3. Trigger Airflow DAG `metropulse_gold_pipeline` để xác nhận orchestration end-to-end gồm transform, quality và dashboard marts.
+4. Tạo Hive DDL cho 5 Gold external tables và chạy `MSCK REPAIR TABLE` với các bảng partition theo `pickup_year_month`.
+5. Kết nối Power BI vào các dashboard marts thay vì đọc trực tiếp bảng trip-level `gold_fare_tip_features`.
+6. Chuẩn bị ML notebooks/jobs: XGBoost dùng `GOLD_DEMAND_FEATURES`, LightGBM dùng `GOLD_FARE_TIP_FEATURES`; riêng tip model nên lọc `payment_type = 1`.
+7. Cân nhắc tạo full zero-demand grid (`all_zones x all_hours`) nếu forecasting model cần học cả giờ không có chuyến.
+8. Cân nhắc tăng VM disk lên 150GB-200GB trước khi chạy nhiều Gold/ML jobs.
 
 ## 6. Ghi Chú Git
 
