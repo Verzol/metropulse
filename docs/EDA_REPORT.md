@@ -104,13 +104,21 @@ Do đó:
 
 ## Phạm Vi Gold
 
-Tại thời điểm kiểm chứng, các path sau chưa tồn tại:
+Gold Layer đã được triển khai theo contract vật lý trong MinIO, không dùng SQL metastore/table catalog.
 
-| Expected Gold dataset | Trạng thái |
+| Gold dataset | Mục đích |
 |---|---|
-| `hourly_demand_features` | Missing |
-| `zone_weather_correlation` | Missing |
-| `pickup_forecast_dataset` | Missing |
-| `borough_traffic_aggregation` | Missing |
+| `s3a://gold/gold_demand_features/` | Demand prediction, grain `pu_location_id x pickup_hour` |
+| `s3a://gold/gold_fare_tip_features/` | Fare/tip estimation extension, grain trip-level |
+| `s3a://gold/quality_reports/gold_quality/latest/` | Quality report cho 2 Gold datasets |
 
-Gold layer chưa được triển khai trong snapshot hiện tại, nên không có notebook Gold trong phạm vi EDA nộp lần này. Nguồn đầu vào đã được chọn và kiểm chứng cho bước triển khai kế tiếp là `hourly_weather` và `taxi_weather_trips_core`; số liệu Clean/`is_gold_candidate` được giữ như bằng chứng phụ về tác động của policy loại outlier, không phải source contract của Gold.
+Logical schemas:
+
+```text
+GOLD_DEMAND_FEATURES
+GOLD_FARE_TIP_FEATURES
+```
+
+Gold hiện đọc từ `s3a://silver/taxi_weather_trips_core/`. Core đã chứa weather features khớp với `hourly_weather`, nên Gold không join lại weather dimension cho 2 bảng này. `GOLD_DEMAND_FEATURES` áp dụng filter `is_valid_distance = true`, `is_valid_fare = true`, `is_outlier_trip = false`, sau đó aggregate theo zone-hour. `GOLD_FARE_TIP_FEATURES` giữ từng trip hợp lệ, thêm điều kiện `2.5 <= fare_amount <= 300`, `trip_distance > 0`, `tip_amount >= 0` và `tip_percent <= 100`, rồi tạo `tip_percent`.
+
+Quality check của Gold kiểm schema, critical nulls, duplicate key của demand table, range của time features, `demand > 0`, `2.5 <= fare_amount <= 300`, `trip_distance > 0`, `0 <= tip_percent <= 100` và số dòng `payment_type = 1` để phục vụ tip modeling.

@@ -34,6 +34,9 @@
 | `make silver-core` | Build compact Silver Core từ Silver |
 | `make silver-quality` | Chạy quality checks trên Silver Core |
 | `make silver-clean` | Build cleaned Silver dataset từ Silver Core |
+| `make gold` | Build Gold ML-ready datasets từ Silver Core |
+| `make gold-quality` | Chạy quality checks trên Gold datasets |
+| `make gold-dashboard` | Build aggregate Gold marts cho Power BI/dashboard |
 
 ### Cleanup
 
@@ -80,6 +83,18 @@ make silver-quality
 make silver-clean
 ```
 
+**Gold batch qua CLI:**
+```bash
+make silver
+make silver-core
+make silver-quality
+make gold
+make gold-quality
+make gold-dashboard
+```
+
+`make silver`, `make silver-core`, `make silver-quality` nên chạy lại trước Gold chính thức để đảm bảo lineage sạch giữa Silver enriched và Silver Core.
+
 Nếu đã chạy `make silver-core` trước đó và dữ liệu trong MinIO còn nguyên, có thể chạy thẳng:
 
 ```bash
@@ -96,6 +111,17 @@ Sau đó mở Airflow và trigger DAG:
 
 ```text
 metropulse_silver_pipeline
+```
+
+**Gold batch qua Airflow:**
+```bash
+make airflow-up
+```
+
+Sau đó mở Airflow và trigger DAG:
+
+```text
+metropulse_gold_pipeline
 ```
 
 ### Monitoring
@@ -129,8 +155,19 @@ Nếu đang làm từ máy cá nhân qua GCP VM, nên mở các URL này bằng 
 - `s3a://silver/taxi_weather_trips_core/` (parquet)
 - `s3a://silver/taxi_weather_trips_clean/` (parquet)
 - `s3a://silver/quality_reports/silver_core_quality/latest/` (json)
+- `s3a://gold/gold_demand_features/` (parquet)
+- `s3a://gold/gold_fare_tip_features/` (parquet)
+- `s3a://gold/quality_reports/gold_quality/latest/` (json)
+- `s3a://gold/dashboard_hourly_demand_kpi/` (parquet)
+- `s3a://gold/dashboard_zone_summary/` (parquet)
+- `s3a://gold/dashboard_payment_tip_summary/` (parquet)
 
-Gold layer được thiết kế đọc từ `s3a://silver/hourly_weather/` và `s3a://silver/taxi_weather_trips_core/`. Khi tạo bảng ML hoặc KPI loại outlier, Gold transform cần lọc bằng các validity flags của Core và xử lý nullable fields một cách tường minh.
+Gold layer hiện đọc từ `s3a://silver/taxi_weather_trips_core/`. Core đã chứa weather features đã join theo `pickup_hour` ở timezone `America/New_York`, nên Gold không join lại weather dimension nếu chỉ cần `temperature_f` và `precipitation_mm`.
+
+Logical schemas:
+
+- `GOLD_DEMAND_FEATURES`: 1 row = 1 `pu_location_id` x 1 `pickup_hour`, dùng cho demand prediction.
+- `GOLD_FARE_TIP_FEATURES`: 1 row = 1 taxi trip hợp lệ sau khi loại tip outlier, dùng cho fare/tip estimation extension.
 
 ## Troubleshooting
 
@@ -173,6 +210,22 @@ Spark read-only job: kiểm schema, row count, critical nulls, outlier profile v
 
 ### `make silver-clean`
 Spark batch job: đọc Silver Core, xử lý null nghiệp vụ thành các cột clean/flags và ghi `taxi_weather_trips_clean`.
+
+### `make gold`
+Spark batch job: đọc `s3a://silver/taxi_weather_trips_core/`, lọc valid non-outlier trips, tạo `GOLD_DEMAND_FEATURES` và `GOLD_FARE_TIP_FEATURES`, rồi ghi parquet xuống bucket `gold`.
+
+### `make gold-quality`
+Spark read-only job: kiểm schema, critical nulls, duplicate demand key, range constraints và ghi report xuống `s3a://gold/quality_reports/gold_quality/latest/`.
+
+### `make gold-dashboard`
+Spark batch job: đọc Gold ML-ready datasets, aggregate thành dashboard marts nhẹ cho Power BI gồm hourly demand KPI, pickup zone summary và payment/tip summary.
+
+Kiểm tra quality report:
+
+```python
+quality = spark.read.json("s3a://gold/quality_reports/gold_quality/latest/")
+quality.filter("status = 'fail'").show(truncate=False)
+```
 
 ### `make airflow-init`
 Initializes Airflow Postgres metadata DB and creates the admin user from `.env`.
