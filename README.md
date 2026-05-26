@@ -30,7 +30,7 @@ Các thành phần chính:
 - Bronze Layer: đã có pipeline Kafka -> MinIO.
 - Silver Layer: đã hoàn thành transform, core schema, quality check và clean dataset.
 - Airflow: đã có DAG `metropulse_silver_pipeline` để orchestrate Silver jobs.
-- Gold Layer: bước tiếp theo, đọc từ `s3a://silver/taxi_weather_trips_clean/`.
+- Gold Layer: bước tiếp theo, đọc từ `s3a://silver/hourly_weather/` và `s3a://silver/taxi_weather_trips_core/`.
 
 ## Tài Liệu Chính
 
