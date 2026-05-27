@@ -1,6 +1,6 @@
 #!/bin/bash
-# MetroPulse Silver Core - Docker Execution
-# Builds a compact Silver core dataset from existing Silver taxi-weather parquet.
+# MetroPulse Gold PostgreSQL Publisher - Docker Execution
+# Stages demand features from MinIO into PostgreSQL, then promotes atomically.
 
 set -euo pipefail
 
@@ -13,16 +13,12 @@ cleanup_container_secrets() {
 }
 trap cleanup_container_secrets EXIT
 
-echo "Starting Silver Core build via Docker Spark..."
+echo "Starting Gold demand publication to PostgreSQL via Docker Spark..."
 echo ""
 
-echo "Copying Silver Core job to Spark container..."
-docker compose cp src/processing/silver_core_transform.py spark-master:/tmp/
+docker compose cp src/serving/publish_gold_to_postgres.py spark-master:/tmp/
 docker compose cp .env spark-master:/tmp/
 docker compose exec -T --user root spark-master sh -c 'chown spark:spark /tmp/.env && chmod 600 /tmp/.env'
-
-echo "Executing Spark job..."
-echo ""
 
 docker compose exec -T spark-master bash -c "
   cd /tmp
@@ -30,11 +26,8 @@ docker compose exec -T spark-master bash -c "
   mkdir -p /tmp/ivy/cache 2>/dev/null || true
   chmod -R 777 /tmp/ivy 2>/dev/null || true
 
-  echo 'Installing Python dependencies...'
   pip install --target /tmp/python-packages --quiet python-dotenv 2>/dev/null || pip install --target /tmp/python-packages python-dotenv
   export PYTHONPATH=/tmp/python-packages:\$PYTHONPATH
-  echo 'Dependencies installed'
-  echo ''
 
   /opt/spark/bin/spark-submit \
     --conf spark.jars.ivy=/tmp/ivy \
@@ -42,16 +35,17 @@ docker compose exec -T spark-master bash -c "
     --conf spark.sql.adaptive.enabled=true \
     --conf spark.sql.adaptive.coalescePartitions.enabled=true \
     --driver-memory 4G \
-    --executor-memory 4G \
-    --executor-cores 1 \
-    --total-executor-cores 2 \
-    --packages org.apache.hadoop:hadoop-aws:3.3.4 \
+    --executor-memory 6G \
+    --executor-cores 2 \
+    --total-executor-cores 4 \
+    --packages org.apache.hadoop:hadoop-aws:3.3.4,org.postgresql:postgresql:42.7.5 \
     --master spark://spark-master:7077 \
-    silver_core_transform.py
+    publish_gold_to_postgres.py
 "
 
-echo ""
-echo "Silver Core build completed!"
-echo ""
-echo "Check data in MinIO:"
-echo "   Path: silver/taxi_weather_trips_core/"
+echo "Promoting validated staging table into ml.gold_demand_features..."
+docker compose exec -T warehouse-postgres sh -c \
+  'psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB"' \
+  < sql/postgres/promote_gold_demand_features.sql
+
+echo "Gold demand features promoted; warehouse validation is required next."

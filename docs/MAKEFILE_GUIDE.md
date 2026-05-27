@@ -13,7 +13,7 @@
 
 | Lệnh | Mục đích |
 |------|---------|
-| `make start` | Khởi động tất cả services (Kafka, MinIO, Spark, Airflow) |
+| `make start` | Khởi động tất cả services (Kafka, MinIO, Spark, Airflow, PostgreSQL Warehouse) |
 | `make stop` | Dừng services (giữ data) |
 | `make restart` | Restart |
 | `make status` | Kiểm tra trạng thái |
@@ -22,6 +22,13 @@
 | `make airflow-up` | Start Airflow webserver + scheduler |
 | `make airflow-logs` | Xem logs Airflow |
 | `make airflow-dags` | Liệt kê DAGs trong Airflow |
+| `make warehouse-up` | Khởi động PostgreSQL Data Warehouse riêng |
+| `make warehouse-init` | Tạo schemas/tables/roles nền của warehouse |
+| `make warehouse-status` | Kiểm tra schemas và serving tables của warehouse |
+| `make warehouse-ml-access` | Tạo/rotate login read-only và xác minh quyền truy cập cho ML |
+| `make warehouse-dashboard-access` | Tạo/rotate login read-only và xác minh quyền truy cập cho dashboard |
+| `make pgadmin-up` | Khởi động pgAdmin UI để kiểm tra warehouse |
+| `make pgadmin-logs` | Xem logs của pgAdmin |
 
 ### Data Pipeline
 
@@ -37,6 +44,11 @@
 | `make gold` | Build Gold ML-ready datasets từ Silver Core |
 | `make gold-quality` | Chạy quality checks trên Gold datasets |
 | `make gold-dashboard` | Build aggregate Gold marts cho Power BI/dashboard |
+| `make gold-publish-ml` | Publish Gold demand features sang PostgreSQL và validate source-target |
+| `make gold-publish-dashboard` | Publish ba Gold dashboard marts sang PostgreSQL và validate source-target |
+| `make gold-publish-serving` | Publish/validate đồng thời serving tables cho ML và dashboard |
+| `make warehouse-quality` | Validate một PostgreSQL publication đang pending |
+| `make dashboard-warehouse-quality` | Validate các dashboard publications đang pending |
 
 ### Cleanup
 
@@ -53,6 +65,10 @@
 make install    # Setup Python + packages
 make start      # Start Docker services
 make airflow-init
+make warehouse-init
+make warehouse-ml-access
+make warehouse-dashboard-access
+make pgadmin-up
 make status     # Kiểm tra
 ```
 
@@ -91,6 +107,7 @@ make silver-quality
 make gold
 make gold-quality
 make gold-dashboard
+make gold-publish-serving
 ```
 
 `make silver`, `make silver-core`, `make silver-quality` nên chạy lại trước Gold chính thức để đảm bảo lineage sạch giữa Silver enriched và Silver Core.
@@ -124,6 +141,8 @@ Sau đó mở Airflow và trigger DAG:
 metropulse_gold_pipeline
 ```
 
+Gold DAG hiện chạy tuần tự Gold transform, Gold quality, dashboard marts, PostgreSQL ML publication/validation rồi dashboard publication/validation. Chạy `make warehouse-up` hoặc `make start` trước khi trigger DAG; DAG yêu cầu container warehouse đã sẵn sàng thay vì recreate service từ trong Airflow. Airflow chỉ gọi runner; Spark vẫn thực hiện ETL/JDBC validation.
+
 ### Monitoring
 
 ```bash
@@ -136,8 +155,10 @@ Browser:
 - MinIO: http://localhost:9001
 - Spark: http://localhost:8080
 - Airflow: http://localhost:8088
+- PostgreSQL Warehouse: `localhost:5433` qua SSH tunnel
+- pgAdmin: `http://localhost:5050` qua SSH tunnel
 
-Nếu đang làm từ máy cá nhân qua GCP VM, nên mở các URL này bằng SSH tunnel. Xem [SETUP_GUIDE.md](SETUP_GUIDE.md).
+Thành viên SSH vào cùng VM và mở tunnel cho các cổng quản trị/database cần dùng; PostgreSQL và pgAdmin không publish trực tiếp ra public IP. Xem [SETUP_GUIDE.md](SETUP_GUIDE.md).
 
 ## Data Streams
 
@@ -168,6 +189,21 @@ Logical schemas:
 
 - `GOLD_DEMAND_FEATURES`: 1 row = 1 `pu_location_id` x 1 `pickup_hour`, dùng cho demand prediction.
 - `GOLD_FARE_TIP_FEATURES`: 1 row = 1 taxi trip hợp lệ sau khi loại tip outlier, dùng cho fare/tip estimation extension.
+
+**PostgreSQL Warehouse Serving:**
+
+- MinIO vẫn là Data Lake và source of truth của Gold Parquet.
+- PostgreSQL database `metropulse_dw` là serving warehouse độc lập với Airflow metadata DB.
+- Schema `ml` chứa bản publish đã validate của `gold_demand_features` cho ML.
+- Schema `mart` chứa ba bảng đã validate: `dashboard_hourly_demand_kpi`, `dashboard_zone_summary`, `dashboard_payment_tip_summary`.
+- Schema `staging` chỉ phục vụ Spark publication; consumer roles không có quyền `USAGE`.
+- Schema `audit` lưu lịch sử publish/validation.
+- Login ML thực tế được provision bằng `make warehouse-ml-access` và chỉ kế thừa quyền đọc từ `ml_reader`.
+- Login dashboard được provision bằng `make warehouse-dashboard-access` và chỉ kế thừa quyền đọc từ `dashboard_reader`.
+- Không full-load `gold_fare_tip_features` trong MVP do bảng có hơn 78 triệu dòng.
+- Consumer ML đọc `ml.gold_demand_features` bằng giờ chuẩn `America/New_York`; xem [POSTGRES_WAREHOUSE_ML_HANDOFF.md](POSTGRES_WAREHOUSE_ML_HANDOFF.md).
+- Dashboard đọc các bảng `mart.dashboard_*`; xem [POSTGRES_WAREHOUSE_DASHBOARD_HANDOFF.md](POSTGRES_WAREHOUSE_DASHBOARD_HANDOFF.md).
+- pgAdmin nạp sẵn connections quản trị, ML read-only và Dashboard read-only; password PostgreSQL không nằm trong server definition.
 
 ## Troubleshooting
 
@@ -220,6 +256,21 @@ Spark read-only job: kiểm schema, critical nulls, duplicate demand key, range 
 ### `make gold-dashboard`
 Spark batch job: đọc Gold ML-ready datasets, aggregate thành dashboard marts nhẹ cho Power BI gồm hourly demand KPI, pickup zone summary và payment/tip summary.
 
+### `make gold-publish-ml`
+Full-refresh publication cho ML: khởi tạo PostgreSQL warehouse nếu cần, Spark đọc `s3a://gold/gold_demand_features/`, ghi private staging qua JDBC, promote transactionally vào `ml.gold_demand_features`, rồi đối chiếu source-target và ghi audit. JDBC write mặc định dùng `4` partitions để kiểm soát tải lên PostgreSQL single-host. Validation gồm `7` metrics, bao gồm snapshot timestamp.
+
+### `make gold-publish-dashboard`
+Full-refresh publication cho ba dashboard marts: Spark ghi các private staging tables, SQL promote transactionally vào schema `mart`, sau đó validate `6` metrics trên từng bảng. Các mart nhỏ được ghi với một JDBC writer để tránh connection pressure không cần thiết.
+
+### `make gold-publish-serving`
+Entry point refresh Serving Layer đầy đủ: lần lượt publish/validate ML feature table và ba dashboard marts.
+
+### `make warehouse-quality`
+Chạy lại validation cho publication mới nhất còn ở trạng thái `started`; lệnh này không tạo publication mới. Kết quả ghi vào `audit.validation_results` và cập nhật trạng thái run.
+
+### `make dashboard-warehouse-quality`
+Chạy lại validation cho ba dashboard publication runs còn ở trạng thái `started`; không tạo publication mới.
+
 Kiểm tra quality report:
 
 ```python
@@ -232,6 +283,21 @@ Initializes Airflow Postgres metadata DB and creates the admin user from `.env`.
 
 ### `make airflow-up`
 Starts Airflow webserver and scheduler. Use this to trigger `metropulse_silver_pipeline`.
+
+### `make warehouse-init`
+Starts PostgreSQL Warehouse and chạy SQL foundation idempotent: tạo schemas `ml`, `mart`, `audit`, `staging`, ML/dashboard target tables, audit tables và read-only group roles. Cần cấu hình `WAREHOUSE_POSTGRES_PASSWORD` trong `.env` trước khi chạy; warehouse chỉ bind `127.0.0.1:5433` trên VM.
+
+### `make warehouse-status`
+Kiểm tra warehouse schemas, ML/dashboard serving tables và số dòng hiện có. Quality source-target chi tiết được ghi bởi publication runners.
+
+### `make warehouse-ml-access`
+Tạo hoặc rotate login `WAREHOUSE_ML_READER_USER` bằng password trong `.env`, grant group role `ml_reader`, rồi xác minh login có thể đọc `ml.gold_demand_features` nhưng không có quyền ghi. Credential thật không được commit vào Git.
+
+### `make warehouse-dashboard-access`
+Tạo hoặc rotate login `WAREHOUSE_DASHBOARD_READER_USER`, grant group role `dashboard_reader`, rồi xác minh login chỉ đọc được ba `mart.dashboard_*` tables và không truy cập private staging.
+
+### `make pgadmin-up`
+Khởi động pgAdmin web UI trên `127.0.0.1:5050` của VM. Từ máy cá nhân, mở SSH tunnel và truy cập `http://localhost:5050`; đăng nhập bằng cấu hình `PGADMIN_DEFAULT_EMAIL` và `PGADMIN_DEFAULT_PASSWORD` trong `.env`.
 
 ---
 

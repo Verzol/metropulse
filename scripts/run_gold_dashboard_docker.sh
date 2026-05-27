@@ -2,11 +2,16 @@
 # MetroPulse Gold Dashboard Marts - Docker Execution
 # Builds aggregate Gold marts for Power BI/dashboard workloads.
 
-set -e
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 cd "$PROJECT_ROOT"
+
+cleanup_container_secrets() {
+  docker compose exec -T --user root spark-master rm -f /tmp/.env >/dev/null 2>&1 || true
+}
+trap cleanup_container_secrets EXIT
 
 echo "Starting Gold dashboard marts build via Docker Spark..."
 echo ""
@@ -15,6 +20,7 @@ echo "Copying Gold dashboard job and zone lookup to Spark container..."
 docker compose cp src/processing/gold_dashboard_marts.py spark-master:/tmp/
 docker compose cp data/taxi_zone_lookup.csv spark-master:/tmp/taxi_zone_lookup.csv
 docker compose cp .env spark-master:/tmp/
+docker compose exec -T --user root spark-master sh -c 'chown spark:spark /tmp/.env && chmod 600 /tmp/.env'
 
 echo "Executing Spark job..."
 echo ""

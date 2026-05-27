@@ -1,0 +1,43 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "MetroPulse Warehouse",
+      "Group": "MetroPulse",
+      "Host": "warehouse-postgres",
+      "Port": 5432,
+      "MaintenanceDB": "metropulse_dw",
+      "Username": "metropulse_dw",
+      "ConnectionParameters": {
+        "sslmode": "prefer",
+        "connect_timeout": 10
+      },
+      "PostConnectionSQL": "SET timezone='America/New_York';"
+    },
+    "2": {
+      "Name": "MetroPulse ML Read Only",
+      "Group": "MetroPulse",
+      "Host": "warehouse-postgres",
+      "Port": 5432,
+      "MaintenanceDB": "metropulse_dw",
+      "Username": "metropulse_ml_reader",
+      "ConnectionParameters": {
+        "sslmode": "prefer",
+        "connect_timeout": 10
+      },
+      "PostConnectionSQL": "SET timezone='America/New_York';"
+    },
+    "3": {
+      "Name": "MetroPulse Dashboard Read Only",
+      "Group": "MetroPulse",
+      "Host": "warehouse-postgres",
+      "Port": 5432,
+      "MaintenanceDB": "metropulse_dw",
+      "Username": "metropulse_dashboard_reader",
+      "ConnectionParameters": {
+        "sslmode": "prefer",
+        "connect_timeout": 10
+      },
+      "PostConnectionSQL": "SET timezone='America/New_York';"
+    }
+  }
+}

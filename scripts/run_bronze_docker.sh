@@ -2,11 +2,16 @@
 # MetroPulse Bronze Layer Ingestion - Docker Execution
 # Runs PySpark job from Spark container (avoids local Java/Scala conflicts)
 
-set -e
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 cd "$PROJECT_ROOT"
+
+cleanup_container_secrets() {
+  docker compose exec -T --user root spark-master rm -f /tmp/.env >/dev/null 2>&1 || true
+}
+trap cleanup_container_secrets EXIT
 
 echo "Starting Bronze Layer Ingestion via Docker Spark..."
 echo ""
@@ -15,6 +20,7 @@ echo ""
 echo "Copying files to Spark container..."
 docker compose cp src/processing/bronze_ingestion.py spark-master:/tmp/
 docker compose cp .env spark-master:/tmp/
+docker compose exec -T --user root spark-master sh -c 'chown spark:spark /tmp/.env && chmod 600 /tmp/.env'
 
 # Run spark-submit from Docker container
 echo "Executing Spark job..."

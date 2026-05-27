@@ -7,6 +7,7 @@ from pyspark.sql import Row, SparkSession
 from pyspark.sql.functions import (
     col,
     count as spark_count,
+    countDistinct,
     current_timestamp,
     lit,
     max as spark_max,
@@ -249,6 +250,8 @@ def demand_range_metrics(df):
     profile = df.select(
         spark_min("pickup_hour").alias("min_pickup_hour"),
         spark_max("pickup_hour").alias("max_pickup_hour"),
+        spark_sum("demand").alias("total_demand"),
+        countDistinct("pickup_year_month").alias("pickup_year_month_count"),
         spark_sum(when(col("demand") <= 0, 1).otherwise(0)).alias("non_positive_demand_rows"),
         spark_sum(when((col("hour") < 0) | (col("hour") > 23), 1).otherwise(0)).alias(
             "invalid_hour_rows"
@@ -260,6 +263,15 @@ def demand_range_metrics(df):
             "invalid_month_rows"
         ),
     ).collect()[0]
+
+    logger.info(
+        "Demand publication baseline: min_pickup_hour=%s, max_pickup_hour=%s, "
+        "total_demand=%s, pickup_year_month_count=%s",
+        profile["min_pickup_hour"],
+        profile["max_pickup_hour"],
+        int(profile["total_demand"] or 0),
+        int(profile["pickup_year_month_count"] or 0),
+    )
 
     return [
         metric(
@@ -275,6 +287,22 @@ def demand_range_metrics(df):
             "max_pickup_hour",
             profile["max_pickup_hour"],
             "pass",
+        ),
+        metric(
+            GOLD_DEMAND_FEATURES,
+            GOLD_DEMAND_FEATURES_PATH,
+            "total_demand",
+            int(profile["total_demand"] or 0),
+            "pass",
+            "Publication baseline for PostgreSQL serving validation.",
+        ),
+        metric(
+            GOLD_DEMAND_FEATURES,
+            GOLD_DEMAND_FEATURES_PATH,
+            "pickup_year_month_count",
+            int(profile["pickup_year_month_count"] or 0),
+            "pass",
+            "Publication baseline for PostgreSQL serving validation.",
         ),
         metric(
             GOLD_DEMAND_FEATURES,
@@ -451,6 +479,7 @@ def main():
         )
     )
     demand_total_rows = demand_features.count()
+    logger.info("Demand feature row count: %s", demand_total_rows)
     metrics.extend(
         null_metrics(
             demand_features,
@@ -472,6 +501,7 @@ def main():
         )
     )
     fare_tip_total_rows = fare_tip_features.count()
+    logger.info("Fare/tip feature row count: %s", fare_tip_total_rows)
     metrics.extend(
         null_metrics(
             fare_tip_features,

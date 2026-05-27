@@ -142,6 +142,7 @@ def build_hourly_demand_kpi(demand_df):
             spark_max("demand").cast(IntegerType()).alias("max_zone_hour_demand"),
             avg("temperature_f").alias("avg_temperature_f"),
             avg("precipitation_mm").alias("avg_precipitation_mm"),
+            spark_max("gold_processed_timestamp").alias("source_gold_processed_timestamp"),
         )
         .withColumn("dashboard_processed_timestamp", current_timestamp())
     )
@@ -159,6 +160,7 @@ def build_zone_summary(demand_df, zones_df):
             spark_max("pickup_hour").alias("last_pickup_hour"),
             avg("temperature_f").alias("avg_temperature_f"),
             avg("precipitation_mm").alias("avg_precipitation_mm"),
+            spark_max("gold_processed_timestamp").alias("source_gold_processed_timestamp"),
         )
         .join(zones_df, "pu_location_id", "left")
         .select(
@@ -175,6 +177,7 @@ def build_zone_summary(demand_df, zones_df):
             "last_pickup_hour",
             "avg_temperature_f",
             "avg_precipitation_mm",
+            "source_gold_processed_timestamp",
             current_timestamp().alias("dashboard_processed_timestamp"),
         )
     )
@@ -198,6 +201,7 @@ def build_payment_tip_summary(fare_tip_df):
             spark_min("tip_percent").alias("min_tip_percent"),
             spark_max("tip_percent").alias("max_tip_percent"),
             first("month", ignorenulls=True).alias("month"),
+            spark_max("gold_processed_timestamp").alias("source_gold_processed_timestamp"),
         )
         .withColumn("dashboard_processed_timestamp", current_timestamp())
     )
