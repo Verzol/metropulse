@@ -2,11 +2,16 @@
 # MetroPulse Silver Quality Check - Docker Execution
 # Runs a read-only Spark quality check against Silver Core parquet in MinIO.
 
-set -e
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 cd "$PROJECT_ROOT"
+
+cleanup_container_secrets() {
+  docker compose exec -T --user root spark-master rm -f /tmp/.env >/dev/null 2>&1 || true
+}
+trap cleanup_container_secrets EXIT
 
 echo "Starting Silver quality check via Docker Spark..."
 echo ""
@@ -14,6 +19,7 @@ echo ""
 echo "Copying Silver quality job to Spark container..."
 docker compose cp src/quality/silver_quality_check.py spark-master:/tmp/
 docker compose cp .env spark-master:/tmp/
+docker compose exec -T --user root spark-master sh -c 'chown spark:spark /tmp/.env && chmod 600 /tmp/.env'
 
 echo "Executing Spark quality job..."
 echo ""
