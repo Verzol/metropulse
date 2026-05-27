@@ -13,6 +13,7 @@ Tài liệu này hướng dẫn người mới SSH vào VM, làm chung trên rep
 | Project path trên VM | `/home/verzol/metropulse` |
 | Spark | 3.5.1, 1 master + 2 workers |
 | Storage | MinIO S3-compatible object storage |
+| Serving Warehouse | PostgreSQL riêng cho ML/dashboard publication |
 | Orchestration | Airflow 2.9.3 |
 
 Khuyến nghị disk:
@@ -31,16 +32,12 @@ ssh <vm-user>@<VM_EXTERNAL_IP>
 cd /home/verzol/metropulse
 ```
 
-Nếu muốn mở UI trên browser máy cá nhân, dùng SSH tunnel:
+Với PostgreSQL Warehouse và pgAdmin, dùng SSH tunnel để thành viên truy cập cùng service trên VM mà không mở port database/UI quản trị ra public internet:
 
 ```bash
 ssh \
-  -L 8088:localhost:8088 \
-  -L 9001:localhost:9001 \
-  -L 9090:localhost:9090 \
-  -L 8080:localhost:8080 \
-  -L 8081:localhost:8081 \
-  -L 8082:localhost:8082 \
+  -L 5433:localhost:5433 \
+  -L 5050:localhost:5050 \
   <vm-user>@<VM_EXTERNAL_IP>
 ```
 
@@ -48,14 +45,10 @@ Sau đó mở:
 
 | Service | URL local qua tunnel |
 |---|---|
-| Airflow | `http://localhost:8088` |
-| MinIO Console | `http://localhost:9001` |
-| Kafdrop | `http://localhost:9090` |
-| Spark Master | `http://localhost:8080` |
-| Spark Worker 1 | `http://localhost:8081` |
-| Spark Worker 2 | `http://localhost:8082` |
+| PostgreSQL Warehouse | `localhost:5433` |
+| pgAdmin | `http://localhost:5050` |
 
-Có thể truy cập trực tiếp bằng `http://<VM_EXTERNAL_IP>:<PORT>` nếu GCP firewall đã mở port tương ứng.
+Public IP của VM vẫn được dùng cho SSH (`port 22`). Các UI đang publish public sẵn của hệ thống prototype như Airflow/MinIO/Spark cần được kiểm soát ở GCP firewall; PostgreSQL và pgAdmin được khóa localhost theo phương án đã chốt.
 
 ## 3. Làm Chung Trên VM
 
@@ -238,33 +231,25 @@ Lệnh tương đối an toàn để kiểm tra Silver hiện tại:
 make silver-quality
 ```
 
-### 3.4 Mở UI Trên Máy Cá Nhân Của Thành Viên
+### 3.4 Mở pgAdmin Trên Máy Cá Nhân Của Thành Viên
 
-Từ máy cá nhân, mở SSH tunnel:
+Mỗi thành viên SSH tunnel vào cùng VM:
 
 ```bash
 ssh \
-  -L 8088:localhost:8088 \
-  -L 9001:localhost:9001 \
-  -L 9090:localhost:9090 \
-  -L 8080:localhost:8080 \
-  -L 8081:localhost:8081 \
-  -L 8082:localhost:8082 \
+  -L 5050:localhost:5050 \
+  -L 5433:localhost:5433 \
   <member_user>@<VM_EXTERNAL_IP>
 ```
 
-Sau đó mở browser trên máy cá nhân:
+Sau đó mở browser hoặc database client:
 
 | Service | URL |
 |---|---|
-| Airflow | `http://localhost:8088` |
-| MinIO Console | `http://localhost:9001` |
-| Kafdrop | `http://localhost:9090` |
-| Spark Master | `http://localhost:8080` |
-| Spark Worker 1 | `http://localhost:8081` |
-| Spark Worker 2 | `http://localhost:8082` |
+| pgAdmin | `http://localhost:5050` |
+| PostgreSQL client | `localhost:5433` |
 
-Thông tin đăng nhập hiện tại lấy từ `.env` trên VM. Không đưa `.env` lên GitHub.
+Mọi thành viên vẫn đọc cùng PostgreSQL volume trên VM; tunnel chỉ bảo vệ đường truy cập. Thông tin đăng nhập hiện tại lấy từ `.env` trên VM. Không đưa `.env` lên GitHub.
 
 ### 3.5 Checklist Lần Đầu Cho Thành Viên
 
@@ -315,6 +300,13 @@ MINIO_ACCESS_KEY=<your_minio_access_key>
 MINIO_SECRET_KEY=<your_minio_secret_key>
 AIRFLOW_ADMIN_PASSWORD=<your_airflow_password>
 AIRFLOW_WEBSERVER_SECRET_KEY=<random_secret>
+WAREHOUSE_POSTGRES_PASSWORD=<strong_warehouse_password>
+WAREHOUSE_ML_READER_USER=metropulse_ml_reader
+WAREHOUSE_ML_READER_PASSWORD=<strong_ml_reader_password>
+WAREHOUSE_DASHBOARD_READER_USER=metropulse_dashboard_reader
+WAREHOUSE_DASHBOARD_READER_PASSWORD=<strong_dashboard_reader_password>
+PGADMIN_DEFAULT_EMAIL=<your_pgadmin_email>
+PGADMIN_DEFAULT_PASSWORD=<strong_pgadmin_password>
 GCP_EXTERNAL_IP=<VM_EXTERNAL_IP>
 ```
 
@@ -325,6 +317,7 @@ sed -i '/^AIRFLOW_UID=/d;/^DOCKER_GID=/d;/^DOCKER_SOCKET_GID=/d' .env
 echo "AIRFLOW_UID=$(id -u)" >> .env
 echo "DOCKER_GID=$(getent group docker | cut -d: -f3)" >> .env
 echo "DOCKER_SOCKET_GID=$(stat -c '%g' /var/run/docker.sock)" >> .env
+chmod 600 .env
 ```
 
 Các path chính trong MinIO:
@@ -338,6 +331,9 @@ s3a://silver/taxi_weather_trips/
 s3a://silver/taxi_weather_trips_core/
 s3a://silver/taxi_weather_trips_clean/
 s3a://silver/quality_reports/silver_core_quality/latest/
+s3a://gold/gold_demand_features/
+s3a://gold/gold_fare_tip_features/
+s3a://gold/quality_reports/gold_quality/latest/
 ```
 
 Không commit `.env`.
@@ -347,6 +343,10 @@ Không commit `.env`.
 ```bash
 make start
 make airflow-init
+make warehouse-init
+make warehouse-ml-access
+make warehouse-dashboard-access
+make pgadmin-up
 make airflow-up
 make status
 ```
@@ -365,6 +365,8 @@ Các service chính:
 | Airflow Webserver | 8088 | Airflow UI |
 | Airflow Scheduler | internal | DAG scheduler |
 | Airflow Postgres | internal | Airflow metadata DB |
+| PostgreSQL Warehouse | 5433 (localhost VM only) | Serving DB riêng cho ML/dashboard |
+| pgAdmin | 5050 (localhost VM only) | Web UI kiểm tra PostgreSQL Warehouse qua SSH tunnel |
 
 Airflow login lấy từ `.env`:
 
@@ -372,6 +374,53 @@ Airflow login lấy từ `.env`:
 AIRFLOW_ADMIN_USERNAME
 AIRFLOW_ADMIN_PASSWORD
 ```
+
+Kiểm tra warehouse foundation:
+
+```bash
+make warehouse-status
+```
+
+Warehouse schemas ban đầu:
+
+```text
+ml      - table phục vụ machine learning
+mart    - tables aggregate phục vụ dashboard
+audit   - lịch sử publish và validation
+staging - private tables cho publication; consumer không có quyền đọc
+```
+
+`ml.gold_demand_features` phục vụ ML; ba bảng `mart.dashboard_*` phục vụ dashboard. Serving Layer nạp các bảng từ Gold MinIO bằng Spark JDBC, promote qua transaction và ghi validation audit:
+
+```bash
+make gold-quality
+make gold-dashboard
+make gold-publish-serving
+make warehouse-status
+```
+
+MinIO vẫn là source of truth; PostgreSQL chỉ là bản serving được publish. Xem [POSTGRES_WAREHOUSE_ML_HANDOFF.md](POSTGRES_WAREHOUSE_ML_HANDOFF.md) và [POSTGRES_WAREHOUSE_DASHBOARD_HANDOFF.md](POSTGRES_WAREHOUSE_DASHBOARD_HANDOFF.md).
+
+Cấp login read-only cho nhóm ML và dashboard:
+
+```bash
+make warehouse-ml-access
+make warehouse-dashboard-access
+```
+
+Chia sẻ credential `WAREHOUSE_ML_READER_*` hoặc `WAREHOUSE_DASHBOARD_READER_*` ngoài Git cho đúng consumer; không chia sẻ tài khoản owner warehouse cho notebook/training/dashboard.
+
+Để read-only access thực sự có ý nghĩa bảo mật, không cấp quyền đọc `.env` cho thành viên chỉ làm ML. Nếu nhóm dùng chung một Unix account trên VM, mọi người có thể đọc cùng secret; khi đó cần chuyển sang user Linux tách biệt hoặc secret management trước khi xem đây là phân quyền an toàn.
+
+Kiểm tra warehouse bằng pgAdmin:
+
+```bash
+make pgadmin-up
+```
+
+Từ máy cá nhân, mở tunnel `ssh -L 5050:localhost:5050 -L 5433:localhost:5433 <vm-user>@<VM_EXTERNAL_IP>` rồi vào `http://localhost:5050`. Đăng nhập bằng `PGADMIN_DEFAULT_EMAIL` / `PGADMIN_DEFAULT_PASSWORD` trong `.env`. Nhóm ML chọn `MetroPulse ML Read Only`; nhóm dashboard chọn `MetroPulse Dashboard Read Only`; không dùng connection owner cho consumer workloads.
+
+pgAdmin hiện sử dụng HTTP nội bộ nhưng traffic từ máy thành viên tới VM đi qua SSH tunnel đã mã hóa. Không mở port `5050` hoặc `5433` trên GCP firewall.
 
 ## 7. Tải Dữ Liệu
 
@@ -441,6 +490,18 @@ silver -> silver-core -> silver-quality -> silver-clean
 ```
 
 Airflow chỉ orchestrate. Spark vẫn xử lý dữ liệu lớn.
+
+Gold DAG `metropulse_gold_pipeline` hiện bao gồm publication sang PostgreSQL:
+
+```text
+Gold transform -> Gold quality -> Gold dashboard marts
+-> initialize warehouse -> publish ML demand features -> validate ML publication
+-> publish dashboard marts -> validate dashboard publication
+```
+
+Đảm bảo chạy `make warehouse-up` hoặc `make start` trước khi trigger DAG. Warehouse service được khởi động từ host; Airflow chỉ initialize SQL trên container đang hoạt động và điều phối Spark publisher/validator.
+
+Sau khi trigger DAG thành công, kiểm tra `audit.publish_run_history` trong pgAdmin hoặc chạy `make warehouse-status`.
 
 ## 10. Trạng Thái Silver Hiện Tại
 
@@ -552,7 +613,7 @@ df -h .
 docker system df
 ```
 
-Không chạy `docker volume prune` nếu còn cần dữ liệu MinIO/Airflow Postgres.
+Không chạy `docker volume prune` nếu còn cần dữ liệu MinIO, Airflow Postgres, PostgreSQL Warehouse hoặc cấu hình pgAdmin.
 
 ## 13. Cleanup
 
@@ -562,7 +623,7 @@ Dừng service nhưng giữ data:
 make stop
 ```
 
-Xóa toàn bộ Docker volumes, gồm MinIO data:
+Xóa toàn bộ Docker volumes, gồm MinIO data, PostgreSQL Warehouse data và cấu hình pgAdmin:
 
 ```bash
 make clean-all
