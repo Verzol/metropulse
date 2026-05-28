@@ -1,185 +1,119 @@
-# Hướng Dẫn Bắt Đầu Cho Bạn Làm Dashboard
+# Dashboard: Kết Nối FastAPI Và Streamlit Trên VM
 
-## Bạn Được Cấp Gì
+Tài liệu này dành cho người làm Dashboard đã đăng nhập vào VM. Hướng triển
+khai dự kiến là:
 
-Người quản lý dự án sẽ gửi riêng cho bạn:
+- `FastAPI` kết nối PostgreSQL và cung cấp API.
+- `Streamlit` hiển thị dashboard, ưu tiên gọi API từ FastAPI.
 
-```text
-DASHBOARD_DB_USER=<username>
-DASHBOARD_DB_PASSWORD=<password>
-VM_USER=<ssh username>
-VM_IP=<địa chỉ VM>
-```
+Bạn không cần chạy lại pipeline và không cần mở file `.env`.
 
-Bạn chỉ cần đọc các bảng dashboard trong PostgreSQL. Không cần chạy Airflow, Spark, Kafka hay MinIO.
-
-## 1. Chọn Cách Kết Nối
-
-### Cách A: Làm Python, Streamlit Hoặc Tool Chạy Trên VM
-
-SSH vào VM:
+## 1. Mở Thư Mục Project
 
 ```bash
-ssh <VM_USER>@<VM_IP>
+cd /home/verzol/metropulse
 ```
 
-Khai báo credential trong terminal trên VM:
+Đặt source code `FastAPI` và `Streamlit` trong thư mục làm việc đã thống nhất
+với nhóm.
+
+## 2. Nhận Thông Tin Đăng Nhập
+
+Người quản lý project sẽ gửi riêng cho bạn:
+
+- `DASHBOARD_DB_USER`
+- `DASHBOARD_DB_PASSWORD`
+
+Khai báo credential trong terminal chạy FastAPI:
 
 ```bash
-export DASHBOARD_DB_USER='<username>'
-export DASHBOARD_DB_PASSWORD='<password>'
+export DASHBOARD_DB_USER='<username_duoc_cap>'
+export DASHBOARD_DB_PASSWORD='<password_duoc_cap>'
 ```
 
-Database connection:
+Không commit credential vào Git và không cần đọc `.env` của project.
 
-```text
-Host: 127.0.0.1
-Port: 5433
-Database: metropulse_dw
-Username: giá trị DASHBOARD_DB_USER
-Password: giá trị DASHBOARD_DB_PASSWORD
-```
+## 3. Thông Tin Kết Nối Database
 
-### Cách B: Làm Power BI Desktop Trên Máy Cá Nhân
+| Thành phần | Giá trị |
+|---|---|
+| Host | `127.0.0.1` |
+| Port | `5433` |
+| Database | `metropulse_dw` |
+| Schema dashboard | `mart` |
 
-Mở SSH tunnel và giữ terminal này đang chạy:
+Tài khoản Dashboard chỉ có quyền đọc các bảng dashboard.
+
+## 4. Các Bảng Để Dùng
+
+| Bảng | Nội dung |
+|---|---|
+| `mart.dashboard_hourly_demand_kpi` | KPI nhu cầu theo giờ |
+| `mart.dashboard_zone_summary` | Tổng hợp theo zone |
+| `mart.dashboard_payment_tip_summary` | Tổng hợp thanh toán và tip |
+
+## 5. Kết Nối PostgreSQL Từ FastAPI
+
+Nếu môi trường Python của bạn chưa có thư viện:
 
 ```bash
-ssh -L 5433:127.0.0.1:5433 <VM_USER>@<VM_IP>
+pip install fastapi uvicorn sqlalchemy psycopg2-binary pandas streamlit requests
 ```
 
-Trong Power BI, chọn connector `PostgreSQL database` và nhập:
-
-```text
-Server: localhost:5433
-Database: metropulse_dw
-Username: tài khoản dashboard được cấp
-Password: password dashboard được cấp
-Data connectivity mode: Import
-```
-
-Dùng `Import` là phù hợp với ba bảng aggregate nhỏ hiện tại.
-
-## 2. Test Kết Nối Database
-
-Nếu dùng Power BI Desktop, kết nối thành công khi Power BI hiển thị ba bảng trong schema `mart`.
-
-Nếu làm Python/Streamlit trên VM, cài driver:
-
-```bash
-pip install pandas sqlalchemy psycopg2-binary
-```
-
-Sau đó test trong Python:
+Kiểm tra kết nối trước khi viết endpoint:
 
 ```python
 import os
 import pandas as pd
 from sqlalchemy import URL, create_engine
 
-engine = create_engine(
-    URL.create(
-        "postgresql+psycopg2",
-        username=os.environ["DASHBOARD_DB_USER"],
-        password=os.environ["DASHBOARD_DB_PASSWORD"],
-        host="127.0.0.1",
-        port=5433,
-        database="metropulse_dw",
-    )
+url = URL.create(
+    "postgresql+psycopg2",
+    username=os.environ["DASHBOARD_DB_USER"],
+    password=os.environ["DASHBOARD_DB_PASSWORD"],
+    host="127.0.0.1",
+    port=5433,
+    database="metropulse_dw",
 )
+engine = create_engine(url)
 
-check = pd.read_sql(
-    "SELECT COUNT(*) AS rows, SUM(total_demand) AS total_demand "
-    "FROM mart.dashboard_hourly_demand_kpi",
+sample = pd.read_sql(
+    "SELECT * FROM mart.dashboard_hourly_demand_kpi LIMIT 5",
     engine,
 )
-print(check)
+print(sample)
 ```
 
-Kết quả hiện tại sẽ gần như:
+Nếu lệnh trên trả về dữ liệu, FastAPI đã có thể dùng kết nối này để tạo các
+endpoint cho Streamlit.
 
-```text
-rows = 17542
-total_demand = 78272751
+## 6. Mở FastAPI Và Streamlit
+
+Sau khi bạn đã tạo source code app, chạy trong hai terminal trên VM:
+
+```bash
+# Terminal 1: thay bằng module FastAPI của bạn
+uvicorn <fastapi_module>:app --host 127.0.0.1 --port 8000 --reload
+
+# Terminal 2: thay bằng file Streamlit của bạn
+streamlit run <streamlit_app.py> --server.address 127.0.0.1 --server.port 8501
 ```
 
-Nếu không connect được, gửi lỗi cho người quản lý dự án. Không tự sửa database.
+Nếu muốn mở giao diện trên trình duyệt máy cá nhân, từ máy cá nhân mở một
+terminal SSH có port forwarding:
 
-## 3. Ba Bảng Để Làm Dashboard
-
-| Bảng | Dùng Để Vẽ Gì | Số Dòng Hiện Tại |
-|---|---|---:|
-| `mart.dashboard_hourly_demand_kpi` | Nhu cầu theo giờ, trend, ảnh hưởng thời tiết | `17,542` |
-| `mart.dashboard_zone_summary` | Bản đồ/borough/zone có nhu cầu cao | `263` |
-| `mart.dashboard_payment_tip_summary` | Fare/tip/payment theo tháng | `160` |
-
-## 4. Query Mẫu
-
-### KPI Theo Thời Gian
-
-```sql
-SELECT
-    pickup_hour,
-    total_demand,
-    active_zones,
-    avg_temperature_f,
-    avg_precipitation_mm
-FROM mart.dashboard_hourly_demand_kpi
-ORDER BY pickup_hour;
+```bash
+ssh -L 8000:127.0.0.1:8000 -L 8501:127.0.0.1:8501 <vm_user>@<vm_ip>
 ```
 
-### Demand Theo Borough/Zone
+Sau đó mở:
 
-```sql
-SELECT
-    pickup_borough,
-    pickup_zone,
-    total_demand,
-    avg_hourly_demand,
-    max_hourly_demand
-FROM mart.dashboard_zone_summary
-ORDER BY total_demand DESC;
-```
+- Streamlit: `http://localhost:8501`
+- FastAPI docs: `http://localhost:8000/docs`
 
-### Payment Và Tip Theo Tháng
+## Lưu Ý
 
-```sql
-SELECT
-    pickup_year_month,
-    payment_type,
-    trip_count,
-    avg_fare_amount,
-    avg_tip_amount,
-    avg_tip_percent
-FROM mart.dashboard_payment_tip_summary
-ORDER BY pickup_year_month, payment_type;
-```
-
-## 5. Bắt Đầu Build Dashboard
-
-Flow ngắn gọn:
-
-```text
-Connect PostgreSQL
--> load 3 bảng mart.dashboard_*
--> tạo relationships/measures nếu cần
--> vẽ KPI cards, trend chart, zone map và payment/tip charts
-```
-
-Gợi ý trang dashboard đầu tiên:
-
-| Visual | Nguồn Dữ Liệu |
-|---|---|
-| Total demand KPI | `dashboard_hourly_demand_kpi` |
-| Hourly/monthly demand trend | `dashboard_hourly_demand_kpi` |
-| Demand theo borough/zone | `dashboard_zone_summary` |
-| Zone ranking hoặc map | `dashboard_zone_summary` |
-| Tip/payment trend | `dashboard_payment_tip_summary` |
-
-## Không Làm Những Việc Này
-
-- Không đọc hoặc chia sẻ file `.env`.
-- Không dùng connection `MetroPulse Warehouse` của owner.
-- Không chạy `INSERT`, `UPDATE`, `DELETE`, `DROP`, `CREATE`.
-- Không query schema `staging`.
-- Không tự refresh pipeline khi chưa thống nhất với người quản lý dự án.
+- FastAPI dùng tài khoản `read-only`; không tạo, sửa hoặc xóa bảng.
+- Streamlit nên gọi FastAPI thay vì mỗi trang tự kết nối trực tiếp vào DB.
+- Nếu không kết nối được, gửi lại thông báo lỗi cho người quản lý VM để kiểm
+  tra container PostgreSQL hoặc credential.

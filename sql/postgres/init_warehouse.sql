@@ -50,6 +50,30 @@ CREATE INDEX IF NOT EXISTS gold_demand_features_pickup_hour_idx
 CREATE INDEX IF NOT EXISTS gold_demand_features_year_month_idx
     ON ml.gold_demand_features (pickup_year_month);
 
+CREATE TABLE IF NOT EXISTS ml.gold_fare_tip_features (
+    fare_amount NUMERIC(12, 2) NOT NULL CHECK (fare_amount BETWEEN 2.50 AND 300.00),
+    tip_amount NUMERIC(12, 2) NOT NULL CHECK (tip_amount >= 0),
+    tip_percent REAL NOT NULL CHECK (tip_percent BETWEEN 0 AND 100),
+    trip_distance REAL NOT NULL CHECK (trip_distance > 0),
+    pu_location_id SMALLINT NOT NULL,
+    do_location_id SMALLINT NOT NULL,
+    passenger_count SMALLINT,
+    ratecode_id SMALLINT,
+    payment_type SMALLINT,
+    hour SMALLINT NOT NULL CHECK (hour BETWEEN 0 AND 23),
+    day_of_week SMALLINT NOT NULL CHECK (day_of_week BETWEEN 1 AND 7),
+    month SMALLINT NOT NULL CHECK (month BETWEEN 1 AND 12),
+    temperature_f REAL NOT NULL,
+    precipitation_mm REAL NOT NULL,
+    pickup_year_month VARCHAR(7) NOT NULL,
+    gold_processed_timestamp TIMESTAMP NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS gold_fare_tip_year_month_idx
+    ON ml.gold_fare_tip_features (pickup_year_month);
+CREATE INDEX IF NOT EXISTS gold_fare_tip_payment_month_idx
+    ON ml.gold_fare_tip_features (payment_type, pickup_year_month);
+
 CREATE TABLE IF NOT EXISTS mart.dashboard_hourly_demand_kpi (
     pickup_hour TIMESTAMP NOT NULL PRIMARY KEY,
     hour SMALLINT NOT NULL CHECK (hour BETWEEN 0 AND 23),
@@ -132,6 +156,7 @@ CREATE TABLE IF NOT EXISTS audit.validation_results (
 );
 
 GRANT SELECT ON ml.gold_demand_features TO ml_reader;
+GRANT SELECT ON ml.gold_fare_tip_features TO ml_reader;
 GRANT SELECT ON mart.dashboard_hourly_demand_kpi TO dashboard_reader;
 GRANT SELECT ON mart.dashboard_zone_summary TO dashboard_reader;
 GRANT SELECT ON mart.dashboard_payment_tip_summary TO dashboard_reader;
@@ -141,3 +166,4 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA mart REVOKE SELECT ON TABLES FROM dashboard_r
 
 -- Remove the legacy staging relation that was accidentally visible to ML readers.
 DROP TABLE IF EXISTS ml.gold_demand_features_staging;
+DROP TABLE IF EXISTS ml.gold_fare_tip_features_staging;

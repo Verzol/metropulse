@@ -31,7 +31,7 @@ Các thành phần chính:
 - Bronze Layer: đã có pipeline Kafka -> MinIO.
 - Silver Layer: đã hoàn thành transform, core schema, quality check và clean dataset.
 - Gold Layer: đã hoàn thành ML-ready datasets, quality checks và dashboard marts trên MinIO.
-- PostgreSQL Warehouse: `ml.gold_demand_features` và ba bảng `mart.dashboard_*` đã được publish, validate để phục vụ ML/Dashboard.
+- PostgreSQL Warehouse: `ml.gold_demand_features`, `ml.gold_fare_tip_features` và ba bảng `mart.dashboard_*` đã được publish/validate để phục vụ ML/Dashboard.
 - Consumer access: đã provision login read-only riêng qua roles `ml_reader` và `dashboard_reader`; staging không mở cho consumer.
 - pgAdmin: UI quản trị PostgreSQL đã cấu hình để kiểm tra warehouse qua SSH tunnel vào VM.
 - Airflow: DAG Gold đã gồm publication/validation PostgreSQL cho cả ML và dashboard serving.

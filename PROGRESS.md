@@ -238,7 +238,7 @@ Quyết định Data Warehouse / Serving Layer:
 - MinIO tiếp tục là Data Lake và source of truth cho Bronze, Silver và Gold Parquet.
 - PostgreSQL sẽ là Data Warehouse / serving layer cho ML và dashboard consumers; Hive không nằm trong MVP mới.
 - MVP PostgreSQL publish trước `gold_demand_features` vì bảng này phù hợp nhu cầu demand forecasting và có quy mô vừa.
-- Chưa full-load `gold_fare_tip_features` vào PostgreSQL do bảng có `78,079,876` dòng; chỉ thực hiện sau khi có nhu cầu ML rõ ràng và benchmark tài nguyên.
+- Đã full-load `gold_fare_tip_features` vào PostgreSQL sau khi nhóm ML xác nhận cần train bài toán fare/tip; publication dùng `2` JDBC writers và aggregate validation phía PostgreSQL để phù hợp VM single-host.
 - Ba dashboard marts đã được publish sang PostgreSQL schema `mart`, validate và cấp quyền dashboard read-only.
 
 ### Airflow
@@ -279,6 +279,8 @@ start
 -> initialize_warehouse
 -> publish_gold_demand_to_postgres
 -> validate_postgres_warehouse_publication
+-> publish_gold_fare_tip_to_postgres
+-> validate_postgres_fare_tip_publication
 -> publish_dashboard_marts_to_postgres
 -> validate_postgres_dashboard_publication
 -> finish
@@ -351,7 +353,8 @@ Trạng thái hiện tại:
 Gold transform: done
 Gold quality: pass 75/75
 Gold dashboard marts: done
-PostgreSQL ML publication: done; validation pass 7/7, gồm snapshot lineage
+PostgreSQL ML demand publication: done; validation pass 7/7, gồm snapshot lineage
+PostgreSQL ML fare/tip publication: done; validation pass 7/7, gồm snapshot lineage
 PostgreSQL dashboard publication: done; validation pass 6/6 cho từng mart
 ```
 
@@ -375,6 +378,7 @@ Objects chuẩn bị cho MVP:
 | Object | Mục đích |
 |---|---|
 | `ml.gold_demand_features` | Table đích cho demand forecasting features sau khi Spark JDBC publish |
+| `ml.gold_fare_tip_features` | Table trip-level cho fare/tip modeling sau khi Spark JDBC publish |
 | `audit.publish_run_history` | Lưu trạng thái mỗi lần publish |
 | `audit.validation_results` | Lưu kết quả đối chiếu MinIO source với PostgreSQL target |
 | `ml_reader` | Read-only group role được login consumer ML kế thừa |
@@ -398,13 +402,14 @@ Xác minh foundation ngày `2026-05-27`:
 | Bind address | `127.0.0.1:5433 -> 5432` |
 | Database timezone | `America/New_York` |
 | Schemas | `ml`, `mart`, `audit`, `staging` tồn tại |
-| Serving table | `ml.gold_demand_features` tồn tại |
+| Serving tables | `ml.gold_demand_features`, `ml.gold_fare_tip_features` tồn tại |
 | Audit tables | `audit.publish_run_history`, `audit.validation_results` tồn tại |
 | Serving row count trước publication | `0` (đúng kỳ vọng Phase 2) |
 
 ### PostgreSQL ML Publication
 
-Phase 3 triển khai đường publish cho dataset demand forecasting:
+Phase 3 triển khai đường publish cho dataset demand forecasting; luồng fare/tip
+trip-level được bổ sung sau khi nhóm ML xác nhận cần bài toán thứ hai:
 
 ```text
 s3a://gold/gold_demand_features/
@@ -432,7 +437,9 @@ make gold-publish-ml
 make warehouse-status
 ```
 
-`make gold-publish-ml` giới hạn JDBC write ở `4` partitions mặc định để tránh tạo quá nhiều concurrent connections/write pressure lên PostgreSQL single-host. Đây là full refresh MVP của bảng demand có quy mô vừa; chưa áp dụng cho bảng fare/tip lớn.
+`make gold-publish-ml` giới hạn JDBC write demand ở `4` partitions mặc định.
+`make gold-publish-fare-tip` giới hạn bảng trip-level ở `2` partitions để tránh
+tạo quá nhiều concurrent connections/write pressure lên PostgreSQL single-host.
 
 Kết quả baseline publication ML ngày `2026-05-27` (các run mới hơn tiếp tục giữ cùng business totals):
 
@@ -447,6 +454,23 @@ Kết quả baseline publication ML ngày `2026-05-27` (các run mới hơn ti�
 | Source-target validation | `7/7 pass`, gồm `gold_processed_timestamp` lineage |
 | PostgreSQL total relation size | `271 MB` |
 
+Kết quả publication fare/tip ngày `2026-05-27`:
+
+| Metric | Giá trị |
+|---|---:|
+| Rows in `ml.gold_fare_tip_features` | `78,079,876` |
+| Total fare amount | `1,543,388,694.47` |
+| Total tip amount | `269,297,179.79` |
+| Credit-card payment rows | `60,587,537` |
+| Distinct `pickup_year_month` | `24` |
+| Source-target validation | `7/7 pass` |
+| PostgreSQL total relation size | `7,883 MB` (gồm indexes) |
+| Index size | khoảng `966 MB` cho hai index query-training |
+
+Fare/tip publisher dùng `2` JDBC writers để giới hạn write pressure. Validation
+aggregate được thực hiện phía PostgreSQL và chỉ trả metrics cho Spark; cách
+này tránh kéo lại toàn bộ bảng trip-level qua JDBC vào executor memory.
+
 Trong audit của Spark JDBC, timestamp source-target được đối chiếu theo representation của Spark (`2023-01-01 05:00:00` tới `2025-01-01 04:00:00`). Khi consumer query PostgreSQL, sử dụng giờ địa phương đã chuẩn hóa `America/New_York` như bảng trên; không chuyển timezone thêm lần nữa.
 
 Tài liệu sử dụng cho nhóm ML: `docs/POSTGRES_WAREHOUSE_ML_HANDOFF.md`.
@@ -458,7 +482,7 @@ Phase 4 triển khai handoff credential cho ML consumers; dashboard serving đư
 ```text
 ml_reader (NOLOGIN group role)
 -> metropulse_ml_reader (LOGIN, credential trong .env)
--> SELECT-only access to ml.gold_demand_features
+-> SELECT-only access to ml.gold_demand_features and ml.gold_fare_tip_features
 ```
 
 Các thành phần:
@@ -482,6 +506,7 @@ Xác minh Phase 4 ngày `2026-05-27`:
 | Inherits group role | `ml_reader=true` |
 | Timezone khi login | `America/New_York` |
 | Can query `ml.gold_demand_features` | `true`, đọc được `1,977,231` rows |
+| Can query `ml.gold_fare_tip_features` | `true`, đọc được `78,079,876` rows |
 | Can create in schema `ml` | `false` |
 | Can `INSERT` / `UPDATE` / `DELETE` features | `false` / `false` / `false` |
 | Can use private schema `staging` | `false` |
@@ -545,6 +570,8 @@ Phase 5 tích hợp serving publication vào `metropulse_gold_pipeline`:
 | `initialize_warehouse` | Initialize schemas/tables idempotently trên container warehouse đang chạy |
 | `publish_gold_demand_to_postgres` | Chạy Spark JDBC staging và transactional promotion |
 | `validate_postgres_warehouse_publication` | Chạy Spark source-target checks và cập nhật audit status |
+| `publish_gold_fare_tip_to_postgres` | Full-load trip-level fare/tip bằng JDBC staging và transactional promotion |
+| `validate_postgres_fare_tip_publication` | Đối chiếu aggregate source-target của fare/tip mà không stream toàn bảng về Spark |
 | `publish_dashboard_marts_to_postgres` | Ghi private staging và promote ba dashboard marts |
 | `validate_postgres_dashboard_publication` | Đối chiếu ba marts với MinIO source và cập nhật audit status |
 
@@ -582,7 +609,7 @@ Run thủ công ngày `2026-05-27` đã hoàn thành toàn bộ đường `Gold 
 2. Đồng bộ lại Silver outputs bằng một lần chạy end-to-end trước mốc nộp nếu cần lineage cùng một run.
 3. Phân phối credential read-only riêng cho thành viên ML và dashboard bằng kênh ngoài Git.
 4. Tách Unix user/secret manager nếu cần cô lập secret mạnh hơn mô hình shared VM prototype.
-5. Chỉ cân nhắc publish `gold_fare_tip_features` khi nhóm ML xác nhận cần, kèm benchmark partitioned/incremental load.
+5. Benchmark partitioned hoặc incremental refresh cho `gold_fare_tip_features` nếu nhóm ML cần nạp lại thường xuyên; full refresh hiện phù hợp cho handoff ban đầu nhưng tốn I/O.
 6. Cân nhắc tạo full zero-demand grid (`all_zones x all_hours`) nếu forecasting model cần học cả giờ không có chuyến.
 7. Cân nhắc tăng VM disk lên 150GB-200GB trước khi chạy nhiều Gold/ML jobs.
 
