@@ -43,18 +43,23 @@ with DAG(
             "test -f src/quality/gold_quality_check.py && "
             "test -f src/processing/gold_dashboard_marts.py && "
             "test -f src/serving/publish_gold_to_postgres.py && "
+            "test -f src/serving/publish_gold_fare_tip_to_postgres.py && "
             "test -f src/serving/publish_dashboard_to_postgres.py && "
             "test -f src/quality/postgres_warehouse_quality_check.py && "
+            "test -f src/quality/postgres_fare_tip_quality_check.py && "
             "test -f src/quality/postgres_dashboard_quality_check.py && "
             "test -f scripts/run_gold_docker.sh && "
             "test -f scripts/run_gold_quality_docker.sh && "
             "test -f scripts/run_gold_dashboard_docker.sh && "
             "test -f scripts/run_gold_postgres_publish_docker.sh && "
             "test -f scripts/run_postgres_warehouse_quality_docker.sh && "
+            "test -f scripts/run_fare_tip_postgres_publish_docker.sh && "
+            "test -f scripts/run_postgres_fare_tip_quality_docker.sh && "
             "test -f scripts/run_dashboard_postgres_publish_docker.sh && "
             "test -f scripts/run_postgres_dashboard_quality_docker.sh && "
             "test -f sql/postgres/init_warehouse.sql && "
             "test -f sql/postgres/promote_gold_demand_features.sql && "
+            "test -f sql/postgres/promote_gold_fare_tip_features.sql && "
             "test -f sql/postgres/promote_dashboard_marts.sql"
         ),
     )
@@ -116,6 +121,18 @@ with DAG(
         execution_timeout=timedelta(hours=2),
     )
 
+    publish_gold_fare_tip_to_postgres = BashOperator(
+        task_id="publish_gold_fare_tip_to_postgres",
+        bash_command=project_command("./scripts/run_fare_tip_postgres_publish_docker.sh"),
+        execution_timeout=timedelta(hours=8),
+    )
+
+    validate_postgres_fare_tip_publication = BashOperator(
+        task_id="validate_postgres_fare_tip_publication",
+        bash_command=project_command("./scripts/run_postgres_fare_tip_quality_docker.sh"),
+        execution_timeout=timedelta(hours=4),
+    )
+
     publish_dashboard_marts_to_postgres = BashOperator(
         task_id="publish_dashboard_marts_to_postgres",
         bash_command=project_command("./scripts/run_dashboard_postgres_publish_docker.sh"),
@@ -141,6 +158,8 @@ with DAG(
         >> initialize_warehouse
         >> publish_gold_demand_to_postgres
         >> validate_postgres_warehouse_publication
+        >> publish_gold_fare_tip_to_postgres
+        >> validate_postgres_fare_tip_publication
         >> publish_dashboard_marts_to_postgres
         >> validate_postgres_dashboard_publication
         >> finish

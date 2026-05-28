@@ -1,4 +1,4 @@
-.PHONY: help start stop restart logs producer bronze silver silver-core silver-quality silver-clean gold gold-quality gold-dashboard gold-publish-ml gold-publish-dashboard gold-publish-serving warehouse-quality dashboard-warehouse-quality weather clean venv install airflow-init airflow-up airflow-down airflow-logs airflow-dags warehouse-up warehouse-init warehouse-status warehouse-ml-access warehouse-dashboard-access pgadmin-up pgadmin-logs
+.PHONY: help start stop restart logs producer bronze silver silver-core silver-quality silver-clean gold gold-quality gold-dashboard gold-publish-ml gold-publish-fare-tip gold-publish-dashboard gold-publish-serving warehouse-quality fare-tip-warehouse-quality dashboard-warehouse-quality weather clean venv install airflow-init airflow-up airflow-down airflow-logs airflow-dags warehouse-up warehouse-init warehouse-status warehouse-ml-access warehouse-dashboard-access pgadmin-up pgadmin-logs
 
 # Default target
 help:
@@ -36,10 +36,12 @@ help:
 	@echo "  make gold          - Build Gold ML-ready parquet datasets from Silver Core"
 	@echo "  make gold-quality  - Run Gold data quality checks"
 	@echo "  make gold-dashboard - Build Gold aggregate dashboard marts"
-	@echo "  make gold-publish-ml - Publish Gold demand features to PostgreSQL and validate"
+	@echo "  make gold-publish-ml - Publish Gold demand forecasting features to PostgreSQL and validate"
+	@echo "  make gold-publish-fare-tip - Publish Gold fare/tip training features to PostgreSQL and validate"
 	@echo "  make gold-publish-dashboard - Publish Gold dashboard marts to PostgreSQL and validate"
 	@echo "  make gold-publish-serving - Publish and validate ML plus dashboard serving tables"
 	@echo "  make warehouse-quality - Re-run pending PostgreSQL publication validation"
+	@echo "  make fare-tip-warehouse-quality - Re-run pending fare/tip publication validation"
 	@echo "  make dashboard-warehouse-quality - Re-run pending dashboard publication validation"
 	@echo ""
 	@echo "Cleanup:"
@@ -147,7 +149,7 @@ warehouse-init: warehouse-up
 
 warehouse-status:
 	@echo "Checking PostgreSQL Data Warehouse schemas and tables..."
-	docker compose exec -T warehouse-postgres sh -c 'psql -v ON_ERROR_STOP=1 --username "$$POSTGRES_USER" --dbname "$$POSTGRES_DB" --command "SHOW timezone;" --command "\dn ml" --command "\dn mart" --command "\dn audit" --command "\dn staging" --command "\dt ml.*" --command "\dt mart.*" --command "\dt audit.*" --command "SELECT COUNT(*) AS gold_demand_features_rows FROM ml.gold_demand_features;" --command "SELECT COUNT(*) AS dashboard_hourly_rows FROM mart.dashboard_hourly_demand_kpi;" --command "SELECT COUNT(*) AS dashboard_zone_rows FROM mart.dashboard_zone_summary;" --command "SELECT COUNT(*) AS dashboard_payment_rows FROM mart.dashboard_payment_tip_summary;"'
+	docker compose exec -T warehouse-postgres sh -c 'psql -v ON_ERROR_STOP=1 --username "$$POSTGRES_USER" --dbname "$$POSTGRES_DB" --command "SHOW timezone;" --command "\dn ml" --command "\dn mart" --command "\dn audit" --command "\dn staging" --command "\dt ml.*" --command "\dt mart.*" --command "\dt audit.*" --command "SELECT COUNT(*) AS gold_demand_features_rows FROM ml.gold_demand_features;" --command "SELECT COUNT(*) AS gold_fare_tip_features_rows FROM ml.gold_fare_tip_features;" --command "SELECT COUNT(*) AS dashboard_hourly_rows FROM mart.dashboard_hourly_demand_kpi;" --command "SELECT COUNT(*) AS dashboard_zone_rows FROM mart.dashboard_zone_summary;" --command "SELECT COUNT(*) AS dashboard_payment_rows FROM mart.dashboard_payment_tip_summary;"'
 
 warehouse-ml-access: warehouse-init
 	@echo "Provisioning read-only PostgreSQL login for ML consumers..."
@@ -218,17 +220,26 @@ gold-publish-ml: warehouse-init
 	./scripts/run_gold_postgres_publish_docker.sh
 	./scripts/run_postgres_warehouse_quality_docker.sh
 
+gold-publish-fare-tip: warehouse-init
+	@echo "Publishing Gold fare/tip features to PostgreSQL Warehouse..."
+	./scripts/run_fare_tip_postgres_publish_docker.sh
+	./scripts/run_postgres_fare_tip_quality_docker.sh
+
 gold-publish-dashboard: warehouse-init
 	@echo "Publishing Gold dashboard marts to PostgreSQL Warehouse..."
 	./scripts/run_dashboard_postgres_publish_docker.sh
 	./scripts/run_postgres_dashboard_quality_docker.sh
 
-gold-publish-serving: gold-publish-ml gold-publish-dashboard
+gold-publish-serving: gold-publish-ml gold-publish-fare-tip gold-publish-dashboard
 	@echo "ML and dashboard serving tables published and validated."
 
 warehouse-quality:
 	@echo "Validating pending PostgreSQL Warehouse publication..."
 	./scripts/run_postgres_warehouse_quality_docker.sh
+
+fare-tip-warehouse-quality:
+	@echo "Validating pending PostgreSQL fare/tip publication..."
+	./scripts/run_postgres_fare_tip_quality_docker.sh
 
 dashboard-warehouse-quality:
 	@echo "Validating pending PostgreSQL dashboard publication..."

@@ -390,7 +390,7 @@ audit   - lịch sử publish và validation
 staging - private tables cho publication; consumer không có quyền đọc
 ```
 
-`ml.gold_demand_features` phục vụ ML; ba bảng `mart.dashboard_*` phục vụ dashboard. Serving Layer nạp các bảng từ Gold MinIO bằng Spark JDBC, promote qua transaction và ghi validation audit:
+`ml.gold_demand_features` phục vụ demand forecasting; `ml.gold_fare_tip_features` phục vụ fare/tip modeling; ba bảng `mart.dashboard_*` phục vụ dashboard. Serving Layer nạp các bảng từ Gold MinIO bằng Spark JDBC, promote qua transaction và ghi validation audit:
 
 ```bash
 make gold-quality
@@ -400,6 +400,8 @@ make warehouse-status
 ```
 
 MinIO vẫn là source of truth; PostgreSQL chỉ là bản serving được publish. Xem [POSTGRES_WAREHOUSE_ML_HANDOFF.md](POSTGRES_WAREHOUSE_ML_HANDOFF.md) và [POSTGRES_WAREHOUSE_DASHBOARD_HANDOFF.md](POSTGRES_WAREHOUSE_DASHBOARD_HANDOFF.md).
+
+`gold_fare_tip_features` là bảng trip-level lớn. Publisher dùng mặc định `2` JDBC write partitions để hạn chế concurrent insert và áp lực memory/I/O trên PostgreSQL single-host; lần full-load đầu tiên có thể chạy lâu hơn bảng demand. Khi nhóm ML chỉ cần refresh fare/tip, chạy `make gold-publish-fare-tip` thay vì refresh toàn bộ serving layer.
 
 Cấp login read-only cho nhóm ML và dashboard:
 
@@ -496,6 +498,7 @@ Gold DAG `metropulse_gold_pipeline` hiện bao gồm publication sang PostgreSQL
 ```text
 Gold transform -> Gold quality -> Gold dashboard marts
 -> initialize warehouse -> publish ML demand features -> validate ML publication
+-> publish ML fare/tip features -> validate fare/tip publication
 -> publish dashboard marts -> validate dashboard publication
 ```
 
