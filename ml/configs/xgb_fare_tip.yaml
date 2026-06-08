@@ -1,0 +1,77 @@
+# configs/xgb_fare_tip.yaml
+#
+# Cấu hình XGBoost cho Fare & Tip Estimation
+# Dataset: ml.gold_fare_tip_features (NYC TLC ~78M rows + weather)
+#
+# Chiến lược với 78M rows (8GB RAM):
+#   - Lấy mẫu ngẫu nhiên ~7% tại DB (~5.5M rows) → đủ đại diện
+#   - tree_method=hist   → ít RAM nhất
+#   - n_jobs=2           → giữ lại RAM cho OS
+#   - val_size=0.1       → 10% train làm val cho early stopping
+
+fare_model:
+  n_estimators      : 2000        # early_stopping tự dừng trước
+  learning_rate     : 0.05
+  max_depth         : 7
+  min_child_weight  : 3
+  subsample         : 0.8
+  colsample_bytree  : 0.8
+  reg_alpha         : 0.0
+  reg_lambda        : 1.0
+  objective         : "reg:squarederror"
+  eval_metric       : "rmse"
+  tree_method       : "hist"      # Quan trọng — ít RAM nhất
+  n_jobs            : 12           # Không dùng -1 trên VM 8GB
+  random_state      : 42
+
+tip_model:
+  n_estimators      : 2000
+  learning_rate     : 0.03
+  max_depth         : 8           # Nhỏ hơn fare — tip noisy hơn
+  min_child_weight  : 15
+  subsample         : 0.8
+  colsample_bytree  : 0.8
+  reg_alpha         : 0.1
+  reg_lambda        : 1.0
+  objective         : "reg:absoluteerror"   # MAE — robust với outliers tip
+  eval_metric       : "mae"
+  tree_method       : "hist"
+  n_jobs            : 12
+  random_state      : 42
+
+training:
+  early_stopping_rounds : 50
+  verbose               : 100
+  test_size             : 0.2     # 80/20 random split
+  val_size              : 0.1     # 10% của train → val cho early stopping
+  sample_pct            : 20       
+                                  
+
+features:
+  base:
+    - trip_distance       # Predictor quan trọng nhất cho fare
+    - pu_location_id      # Pickup zone
+    - do_location_id      # Dropoff zone
+    - passenger_count     # Số hành khách
+    - ratecode_id         # Loại bảng giá (Standard/JFK/Newark...)
+    - hour                # Giờ trong ngày
+    - day_of_week         # Ngày trong tuần
+    - month               # Tháng
+    - temperature_f       # Nhiệt độ từ weather join
+    - precipitation_mm    # Lượng mưa từ weather join
+
+  derived:
+    - is_rush_hour        # hour IN (7,8,9,17,18,19)
+    - is_weekend          # day_of_week IN (5,6) — 0=Mon, 6=Sun
+    - is_raining          # precipitation_mm > 0
+    - is_cold             # temperature_f < 36
+
+  fare_target      : fare_amount
+  tip_target       : tip_percent
+  tip_payment_type : 1            # Chỉ credit card cho tip model
+
+paths:
+  fare_model_output   : "models/fare_xgb.json"
+  tip_model_output    : "models/tip_xgb.json"
+  fare_metrics_output : "logs/fare_metrics.json"
+  tip_metrics_output  : "logs/tip_metrics.json"

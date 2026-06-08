@@ -1,0 +1,77 @@
+# configs/xgb_demand.yaml
+#
+# Cấu hình XGBoost cho bài toán Demand Prediction
+#
+# Căn cứ:
+#   Correa & Moyano (2023) — "Analysis and prediction of New York City
+#   taxi and Uber demands", Journal of Applied Research and Technology,
+#   Vol.21 No.5, DOI: 10.22201/icat.24486736e.2023.21.5.2074
+#
+# Bài báo dùng XGBoost với default parameters (không publish cụ thể),
+# đạt RMSE=38.51 và R²=0.97 trên NYC TLC + NOAA weather data.
+# Nhóm dùng default làm điểm khởi đầu, sau đó tune bằng Optuna.
+
+model:
+  # ── Core params — XGBoost default (điểm khởi đầu từ bài báo) ──
+  n_estimators: 1500          # Dùng early_stopping để tìm optimal thực
+  learning_rate: 0.05         # Giảm từ default 0.3 → ổn định hơn với 1000 cây
+  max_depth: 6                # XGBoost default — bài báo không override
+  min_child_weight: 1         # XGBoost default
+  gamma: 0                    # XGBoost default
+  subsample: 0.8              # Anti-overfit — standard practice
+  colsample_bytree: 0.8       # Anti-overfit — standard practice
+  reg_alpha: 0                # XGBoost default (L1)
+  reg_lambda: 1               # XGBoost default (L2)
+  objective: "reg:squarederror"
+  eval_metric: "rmse"
+  tree_method: "hist"         # Nhanh hơn "exact", ít RAM hơn — phù hợp máy 8GB
+  n_jobs: 2                   # Giữ lại RAM cho OS (máy 8GB RAM)
+  random_state: 42
+  enable_categorical: true
+
+training:
+  early_stopping_rounds: 50
+  verbose: 100
+  test_size: 0.2              # 80/20 split theo thời gian — theo bài báo
+  n_cv_splits: 5              # TimeSeriesSplit folds
+  cv_gap: 24                  # Bỏ qua 24 giờ giữa train/val — tránh leakage
+
+features:
+  # ── Features theo đúng bài báo Correa & Moyano (2023) ──
+  # Section 5.1 "Feature selection":
+  #   "TAZ (location), hour of day, day of week, month,
+  #    temperature (°F), rainfall" → 6 features cốt lõi
+  base:
+    - pu_location_id      # "TAZ — location would be a good predictor"
+    - hour                # "time of day is the most crucial factor"
+    - day_of_week         # "day of week"
+    - month               # "seasonal variation April–September"
+    - temperature_f       # "temperature measured in °F — <36°F tăng demand"
+    - precipitation_mm    # "hourly rainfall"
+
+  # ── Derived features — nhóm tự thêm, không có trong bài báo ──
+  # Cần nói rõ với thầy đây là extension của nhóm
+  derived:
+    - "is_weekend"
+    - "is_rush_hour"
+    - "is_transient_weekend_night" # Feature mới cho rạng sáng cuối tuần
+    - "is_cold"
+    - "is_raining"
+    - "is_holiday"
+    - "demand_lag1h"
+    - "demand_lag2h"        # Thêm mới
+    - "demand_lag24h"
+    - "demand_lag48h"       # Thêm mới
+    - "demand_lag168h"
+    - "demand_vmo_3day"     # Thêm mới
+    - "is_airport"
+    - "is_manhattan_core"
+    - "airport_rush_hour"
+    - "manhattan_weekend"
+    - "airport_cold"
+    - "manhattan_rain"
+  target: demand
+
+paths:
+  model_output: "models/demand_xgb.json"
+  metrics_output: "logs/demand_metrics.json"
