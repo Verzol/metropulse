@@ -1,11 +1,5 @@
 """
 Train XGBoost — Fare & Tip Estimation
-Dataset: ml.gold_fare_tip_features (NYC TLC ~78M rows + weather)
-
-Chiến lược RAM (VM 8GB):
-  Load ~7% rows tại DB qua hashtext sampling (~5.5M rows, ~600MB)
-  tree_method=hist, n_jobs=2 để tiết kiệm RAM khi train
-
 Fare model : XGBoost reg:squarederror — random 80/20 split
 Tip model  : XGBoost reg:absoluteerror — filter payment_type=1
 

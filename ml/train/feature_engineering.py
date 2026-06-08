@@ -1,6 +1,5 @@
 """
 Feature Engineering cho Demand Prediction
-Tạo derived features theo bài báo + mở rộng: vùng trọng điểm và ngày lễ.
 """
 import pandas as pd
 import numpy as np
@@ -57,7 +56,6 @@ def build_demand_features(df: pd.DataFrame) -> pd.DataFrame:
     """
     df = df.copy()
 
-    # ── Sort cho lag ───────────────────────────────────────
     df = df.sort_values(["pu_location_id", "pickup_hour"]).reset_index(drop=True)
 
     # ── [ÉP KIỂU CATEGORY] Giúp XGBoost tối ưu cây tốt hơn ──
@@ -65,8 +63,6 @@ def build_demand_features(df: pd.DataFrame) -> pd.DataFrame:
     df["hour"]           = df["hour"].astype("category")
     df["day_of_week"]    = df["day_of_week"].astype("category")
 
-    # ── Time features ──────────────────────────────────────
-    # Chuyển tạm sang int để tính toán toán học logic
     dow_int = df["day_of_week"].astype(int)
     hour_int = df["hour"].astype(int)
 
@@ -80,7 +76,6 @@ def build_demand_features(df: pd.DataFrame) -> pd.DataFrame:
     df["is_cold"]    = (df["temperature_f"]   < 36).astype("int8")
     df["is_raining"] = (df["precipitation_mm"] > 0).astype("int8")
 
-    # ── [NÂNG CẤP] Lag features mở rộng phủ kín chu kỳ ──────
     grp = df.groupby("pu_location_id")["demand"]
     df["demand_lag1h"]   = grp.shift(1)
     df["demand_lag2h"]   = grp.shift(2)   # Bắt kịp xu hướng ngắn hạn vừa diễn ra
