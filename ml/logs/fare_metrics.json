@@ -1,0 +1,24 @@
+{
+  "rmse": 3.8714,
+  "mae": 1.9973,
+  "mape": 0.1258,
+  "r2": 0.9516,
+  "best_iteration": 1743,
+  "n_features": 14,
+  "features": [
+    "trip_distance",
+    "pu_location_id",
+    "do_location_id",
+    "passenger_count",
+    "ratecode_id",
+    "hour",
+    "day_of_week",
+    "month",
+    "temperature_f",
+    "precipitation_mm",
+    "is_rush_hour",
+    "is_weekend",
+    "is_raining",
+    "is_cold"
+  ]
+}
