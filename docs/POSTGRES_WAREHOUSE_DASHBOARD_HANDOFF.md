@@ -1,10 +1,10 @@
 # Dashboard: Kết Nối FastAPI Và Streamlit Trên VM
 
-Tài liệu này dành cho người làm Dashboard đã đăng nhập vào VM. Hướng triển
-khai dự kiến là:
+Tài liệu này dành cho người làm Dashboard đã đăng nhập vào VM. Repo hiện có
+demo dashboard tối thiểu gồm:
 
-- `FastAPI` kết nối PostgreSQL và cung cấp API.
-- `Streamlit` hiển thị dashboard, ưu tiên gọi API từ FastAPI.
+- `src/dashboard_api/main.py`: `FastAPI` kết nối PostgreSQL và cung cấp API.
+- `src/dashboard_app/streamlit_app.py`: `Streamlit` hiển thị dashboard, gọi API từ FastAPI.
 
 Bạn không cần chạy lại pipeline và không cần mở file `.env`.
 
@@ -14,8 +14,7 @@ Bạn không cần chạy lại pipeline và không cần mở file `.env`.
 cd /home/verzol/metropulse
 ```
 
-Đặt source code `FastAPI` và `Streamlit` trong thư mục làm việc đã thống nhất
-với nhóm.
+Nếu cần mở rộng giao diện, tiếp tục phát triển từ hai file demo trên.
 
 ## 2. Nhận Thông Tin Đăng Nhập
 
@@ -57,7 +56,9 @@ Tài khoản Dashboard chỉ có quyền đọc các bảng dashboard.
 Nếu môi trường Python của bạn chưa có thư viện:
 
 ```bash
-pip install fastapi uvicorn sqlalchemy psycopg2-binary pandas streamlit requests
+python3 -m venv .venv-dashboard
+. .venv-dashboard/bin/activate
+pip install fastapi uvicorn sqlalchemy 'psycopg[binary]' pandas streamlit requests python-dotenv
 ```
 
 Kiểm tra kết nối trước khi viết endpoint:
@@ -68,7 +69,7 @@ import pandas as pd
 from sqlalchemy import URL, create_engine
 
 url = URL.create(
-    "postgresql+psycopg2",
+    "postgresql+psycopg",
     username=os.environ["DASHBOARD_DB_USER"],
     password=os.environ["DASHBOARD_DB_PASSWORD"],
     host="127.0.0.1",
@@ -89,14 +90,14 @@ endpoint cho Streamlit.
 
 ## 6. Mở FastAPI Và Streamlit
 
-Sau khi bạn đã tạo source code app, chạy trong hai terminal trên VM:
+Repo hiện đã có nền FastAPI/Streamlit tối thiểu. Chạy trong hai terminal trên VM:
 
 ```bash
-# Terminal 1: thay bằng module FastAPI của bạn
-uvicorn <fastapi_module>:app --host 127.0.0.1 --port 8000 --reload
+# Terminal 1
+make dashboard-api
 
-# Terminal 2: thay bằng file Streamlit của bạn
-streamlit run <streamlit_app.py> --server.address 127.0.0.1 --server.port 8501
+# Terminal 2
+make dashboard-ui
 ```
 
 Nếu muốn mở giao diện trên trình duyệt máy cá nhân, từ máy cá nhân mở một
@@ -111,9 +112,21 @@ Sau đó mở:
 - Streamlit: `http://localhost:8501`
 - FastAPI docs: `http://localhost:8000/docs`
 
+Nếu dashboard báo lỗi 503 ở `/api/meta` hoặc `/api/health`, kiểm tra ngay
+container PostgreSQL:
+
+```bash
+docker compose ps warehouse-postgres
+docker compose up -d warehouse-postgres
+```
+
+Sau đó đợi container sang trạng thái `healthy` rồi tải lại Streamlit.
+
 ## Lưu Ý
 
 - FastAPI dùng tài khoản `read-only`; không tạo, sửa hoặc xóa bảng.
 - Streamlit nên gọi FastAPI thay vì mỗi trang tự kết nối trực tiếp vào DB.
+- Dashboard UI hiện ưu tiên các panel SVG/HTML tự dựng thay vì chart widget mặc định của Streamlit để tránh lỗi tương thích trên môi trường Python 3.14 của VM.
+- Lệnh khởi động giao diện vẫn là `make dashboard-ui`.
 - Nếu không kết nối được, gửi lại thông báo lỗi cho người quản lý VM để kiểm
   tra container PostgreSQL hoặc credential.

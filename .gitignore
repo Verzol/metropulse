@@ -11,6 +11,7 @@ data/raw/                          # Parquet taxi data (huge, exclude)
 # Python Environment
 venv/
 .venv/
+.venv-dashboard/
 env/
 ENV/
 __pycache__/
@@ -42,7 +43,12 @@ spark-warehouse/
 metastore_db/
 *.log
 *.logs
-logs/
+# Loại trừ toàn bộ nội dung thư mục logs
+logs/*
+# Nhưng cho phép các file metrics quan trọng
+!logs/fare_metrics.json
+!logs/demand_metrics.json
+!logs/tip_metrics.json
 airflow/logs/
 airflow/*.pid
 tmp/
@@ -70,3 +76,6 @@ volumes/
 .ssh/
 *.key
 *.pem
+
+reports/
+*.zip/
