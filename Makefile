@@ -1,4 +1,4 @@
-.PHONY: help start stop restart logs producer bronze silver silver-core silver-quality silver-clean gold gold-quality gold-dashboard gold-publish-ml gold-publish-fare-tip gold-publish-dashboard gold-publish-serving warehouse-quality fare-tip-warehouse-quality dashboard-warehouse-quality weather clean venv install airflow-init airflow-up airflow-down airflow-logs airflow-dags warehouse-up warehouse-init warehouse-status warehouse-ml-access warehouse-dashboard-access pgadmin-up pgadmin-logs
+.PHONY: help start stop restart logs producer bronze silver silver-core silver-quality silver-clean gold gold-quality gold-dashboard gold-publish-ml gold-publish-fare-tip gold-publish-dashboard gold-publish-serving warehouse-quality fare-tip-warehouse-quality dashboard-warehouse-quality weather clean venv install airflow-init airflow-up airflow-down airflow-logs airflow-dags warehouse-up warehouse-init warehouse-status warehouse-ml-access warehouse-dashboard-access dashboard-api dashboard-ui pgadmin-up pgadmin-logs
 
 # Default target
 help:
@@ -22,6 +22,8 @@ help:
 	@echo "  make warehouse-status - Check warehouse schemas and tables"
 	@echo "  make warehouse-ml-access - Provision and verify read-only ML login"
 	@echo "  make warehouse-dashboard-access - Provision and verify read-only dashboard login"
+	@echo "  make dashboard-api - Run FastAPI dashboard API on 127.0.0.1:8000"
+	@echo "  make dashboard-ui - Run Streamlit dashboard UI on 127.0.0.1:8501"
 	@echo "  make pgadmin-up    - Start pgAdmin UI for Warehouse inspection"
 	@echo "  make pgadmin-logs  - View pgAdmin logs"
 	@echo ""
@@ -158,6 +160,24 @@ warehouse-ml-access: warehouse-init
 warehouse-dashboard-access: warehouse-init
 	@echo "Provisioning read-only PostgreSQL login for dashboard consumers..."
 	./scripts/setup_dashboard_reader_access_docker.sh
+
+dashboard-api:
+	@echo "Starting MetroPulse dashboard FastAPI..."
+	@if [ -d .venv-dashboard ]; then \
+		. .venv-dashboard/bin/activate; \
+	else \
+		. .venv/bin/activate; \
+	fi; \
+	uvicorn src.dashboard_api.main:app --host 127.0.0.1 --port 8000 --reload
+
+dashboard-ui:
+	@echo "Starting MetroPulse Streamlit dashboard..."
+	@if [ -d .venv-dashboard ]; then \
+		. .venv-dashboard/bin/activate; \
+	else \
+		. .venv/bin/activate; \
+	fi; \
+	streamlit run src/dashboard_app/streamlit_app.py --server.address 127.0.0.1 --server.port 8501
 
 pgadmin-up: warehouse-up
 	@echo "Starting pgAdmin UI for PostgreSQL Warehouse..."

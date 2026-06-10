@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from urllib.parse import urlparse, urlunparse
 
 import pyspark
@@ -17,6 +18,8 @@ if load_dotenv:
 
 NYC_TIMEZONE = "America/New_York"
 EXPECTED_SPARK_VERSION = "3.5.1"
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_SPARK_IVY_DIR = PROJECT_ROOT / ".spark_ivy"
 
 BRONZE_YELLOW_PATH = os.getenv("BRONZE_YELLOW_PATH", "s3a://bronze/yellow_taxi/")
 BRONZE_GREEN_PATH = os.getenv("BRONZE_GREEN_PATH", "s3a://bronze/green_taxi/")
@@ -73,13 +76,23 @@ def get_spark(app_name="MetroPulse Notebook EDA"):
     minio_endpoint = _resolve_minio_endpoint(os.getenv("MINIO_ENDPOINT", "http://minio:9000"))
     minio_access_key = os.getenv("MINIO_ACCESS_KEY")
     minio_secret_key = os.getenv("MINIO_SECRET_KEY")
+    spark_local_ip = os.getenv("SPARK_LOCAL_IP", "127.0.0.1")
+    spark_local_hostname = os.getenv("SPARK_LOCAL_HOSTNAME", "localhost")
+    spark_ivy_dir = Path(os.getenv("SPARK_IVY_DIR", str(DEFAULT_SPARK_IVY_DIR)))
+
+    spark_ivy_dir.mkdir(parents=True, exist_ok=True)
+    os.environ.setdefault("SPARK_LOCAL_IP", spark_local_ip)
+    os.environ.setdefault("SPARK_LOCAL_HOSTNAME", spark_local_hostname)
 
     return (
         SparkSession.builder.appName(app_name)
+        .config("spark.driver.host", spark_local_ip)
+        .config("spark.driver.bindAddress", spark_local_ip)
         .config("spark.sql.session.timeZone", NYC_TIMEZONE)
         .config("spark.sql.shuffle.partitions", os.getenv("SPARK_SQL_SHUFFLE_PARTITIONS", "48"))
         .config("spark.driver.extraJavaOptions", "-Duser.timezone=America/New_York")
         .config("spark.executor.extraJavaOptions", "-Duser.timezone=America/New_York")
+        .config("spark.jars.ivy", str(spark_ivy_dir))
         .config("spark.jars.packages", "org.apache.hadoop:hadoop-aws:3.3.4")
         .config("spark.hadoop.fs.s3a.endpoint", minio_endpoint)
         .config("spark.hadoop.fs.s3a.access.key", minio_access_key)
