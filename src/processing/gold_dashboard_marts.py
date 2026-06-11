@@ -1,7 +1,7 @@
+import csv
 import logging
 import os
 import sys
-import csv
 
 from dotenv import load_dotenv
 from pyspark.sql import SparkSession
@@ -63,20 +63,21 @@ DASHBOARD_PAYMENT_TIP_SUMMARY_PATH = os.getenv(
 ZONE_LOOKUP_PATH = os.getenv("ZONE_LOOKUP_PATH", "/tmp/taxi_zone_lookup.csv")
 
 
-spark = (
-    SparkSession.builder.appName("MetroPulse_Gold_Dashboard_Marts")
-    .config("spark.sql.session.timeZone", NYC_TIMEZONE)
-    .config("spark.sql.shuffle.partitions", os.getenv("SPARK_SQL_SHUFFLE_PARTITIONS", "48"))
-    .config("spark.driver.extraJavaOptions", "-Duser.timezone=America/New_York")
-    .config("spark.executor.extraJavaOptions", "-Duser.timezone=America/New_York")
-    .config("spark.jars.packages", "org.apache.hadoop:hadoop-aws:3.3.4")
-    .config("spark.hadoop.fs.s3a.endpoint", MINIO_ENDPOINT)
-    .config("spark.hadoop.fs.s3a.access.key", MINIO_ACCESS_KEY)
-    .config("spark.hadoop.fs.s3a.secret.key", MINIO_SECRET_KEY)
-    .config("spark.hadoop.fs.s3a.path.style.access", "true")
-    .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
-    .getOrCreate()
-)
+def create_spark_session():
+    return (
+        SparkSession.builder.appName("MetroPulse_Gold_Dashboard_Marts")
+        .config("spark.sql.session.timeZone", NYC_TIMEZONE)
+        .config("spark.sql.shuffle.partitions", os.getenv("SPARK_SQL_SHUFFLE_PARTITIONS", "48"))
+        .config("spark.driver.extraJavaOptions", "-Duser.timezone=America/New_York")
+        .config("spark.executor.extraJavaOptions", "-Duser.timezone=America/New_York")
+        .config("spark.jars.packages", "org.apache.hadoop:hadoop-aws:3.3.4")
+        .config("spark.hadoop.fs.s3a.endpoint", MINIO_ENDPOINT)
+        .config("spark.hadoop.fs.s3a.access.key", MINIO_ACCESS_KEY)
+        .config("spark.hadoop.fs.s3a.secret.key", MINIO_SECRET_KEY)
+        .config("spark.hadoop.fs.s3a.path.style.access", "true")
+        .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
+        .getOrCreate()
+    )
 
 
 zone_schema = StructType(
@@ -90,7 +91,7 @@ zone_schema = StructType(
 )
 
 
-def read_zone_lookup():
+def read_zone_lookup(spark):
     logger.info("Reading taxi zone lookup from %s", ZONE_LOOKUP_PATH)
     if ZONE_LOOKUP_PATH.startswith("s3a://"):
         return (
@@ -149,8 +150,8 @@ def build_hourly_demand_kpi(demand_df):
 
 
 def build_zone_summary(demand_df, zones_df):
-    zone_summary = (
-        demand_df.groupBy("pu_location_id")
+    return (
+        demand_df.groupBy("pickup_year_month", "pu_location_id")
         .agg(
             spark_sum("demand").cast(IntegerType()).alias("total_demand"),
             avg("demand").alias("avg_hourly_demand"),
@@ -164,6 +165,7 @@ def build_zone_summary(demand_df, zones_df):
         )
         .join(zones_df, "pu_location_id", "left")
         .select(
+            "pickup_year_month",
             "pu_location_id",
             "pickup_borough",
             "pickup_zone",
@@ -181,8 +183,6 @@ def build_zone_summary(demand_df, zones_df):
             current_timestamp().alias("dashboard_processed_timestamp"),
         )
     )
-
-    return zone_summary
 
 
 def build_payment_tip_summary(fare_tip_df):
@@ -216,35 +216,40 @@ def write_parquet(df, path, partition_columns=None):
 
 
 def main():
+    spark = create_spark_session()
     logger.info("Reading Gold demand features from %s", GOLD_DEMAND_FEATURES_PATH)
-    demand = spark.read.parquet(GOLD_DEMAND_FEATURES_PATH)
+    try:
+        demand = spark.read.parquet(GOLD_DEMAND_FEATURES_PATH)
 
-    logger.info("Reading Gold fare/tip features from %s", GOLD_FARE_TIP_FEATURES_PATH)
-    fare_tip = spark.read.parquet(GOLD_FARE_TIP_FEATURES_PATH)
+        logger.info("Reading Gold fare/tip features from %s", GOLD_FARE_TIP_FEATURES_PATH)
+        fare_tip = spark.read.parquet(GOLD_FARE_TIP_FEATURES_PATH)
 
-    zones = read_zone_lookup()
+        zones = read_zone_lookup(spark)
 
-    hourly_demand_kpi = build_hourly_demand_kpi(demand)
-    zone_summary = build_zone_summary(demand, zones)
-    payment_tip_summary = build_payment_tip_summary(fare_tip)
+        hourly_demand_kpi = build_hourly_demand_kpi(demand)
+        zone_summary = build_zone_summary(demand, zones)
+        payment_tip_summary = build_payment_tip_summary(fare_tip)
 
-    write_parquet(
-        hourly_demand_kpi.repartition("pickup_year_month"),
-        DASHBOARD_HOURLY_DEMAND_KPI_PATH,
-        ["pickup_year_month"],
-    )
-    write_parquet(zone_summary.coalesce(1), DASHBOARD_ZONE_SUMMARY_PATH)
-    write_parquet(
-        payment_tip_summary.repartition("pickup_year_month"),
-        DASHBOARD_PAYMENT_TIP_SUMMARY_PATH,
-        ["pickup_year_month"],
-    )
+        write_parquet(
+            hourly_demand_kpi.repartition("pickup_year_month"),
+            DASHBOARD_HOURLY_DEMAND_KPI_PATH,
+            ["pickup_year_month"],
+        )
+        write_parquet(
+            zone_summary.repartition("pickup_year_month"),
+            DASHBOARD_ZONE_SUMMARY_PATH,
+            ["pickup_year_month"],
+        )
+        write_parquet(
+            payment_tip_summary.repartition("pickup_year_month"),
+            DASHBOARD_PAYMENT_TIP_SUMMARY_PATH,
+            ["pickup_year_month"],
+        )
 
-    logger.info("Gold dashboard marts completed")
+        logger.info("Gold dashboard marts completed")
+    finally:
+        spark.stop()
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    finally:
-        spark.stop()
+    main()

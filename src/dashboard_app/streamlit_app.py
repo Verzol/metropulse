@@ -7,7 +7,6 @@ import pandas as pd
 import requests
 import streamlit as st
 from dotenv import load_dotenv
-import streamlit.components.v1 as components
 
 
 load_dotenv()
@@ -48,22 +47,54 @@ st.markdown(
     """
     <style>
         :root {
-            --mp-bg: #eef2f6;
-            --mp-surface: #ffffff;
-            --mp-surface-soft: #f7f9fc;
-            --mp-border: rgba(37, 48, 63, 0.12);
-            --mp-text: #0f172a;
-            --mp-muted: #5c6b7d;
-            --mp-primary: #12324a;
-            --mp-secondary: #14766f;
-            --mp-accent: #b45309;
-            --mp-danger: #b42318;
-            --mp-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.05);
+            color-scheme: only light;
+            --mp-bg: #F7FAFC;
+            --mp-surface: #FFFFFF;
+            --mp-surface-soft: #F2F6FA;
+            --mp-border: #D6DEE8;
+            --mp-text: #172433;
+            --mp-muted: #5F7083;
+            --mp-primary: #2E5B84;
+            --mp-primary-dark: #234767;
+            --mp-accent: #C96B4A;
+            --mp-danger: #DC2626;
+            --mp-sidebar: #1B2633;
+            --mp-sidebar-soft: #253243;
+            --mp-radius: 14px;
+            --mp-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 10px 28px rgba(15, 23, 42, 0.05);
+            --mp-shadow-hover: 0 4px 10px rgba(15, 23, 42, 0.06), 0 16px 32px rgba(15, 23, 42, 0.08);
         }
 
-        html, body, [class*="css"] {
+        html, body, .stApp, [class*="css"] {
             background: var(--mp-bg);
             color: var(--mp-text);
+            color-scheme: only light;
+            font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-size: 16.5px;
+            line-height: 1.6;
+            font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .stApp p,
+        .stApp span,
+        .stApp label,
+        .stApp li,
+        .stApp div[data-testid="stMarkdownContainer"] {
+            color: var(--mp-text);
+        }
+
+        .stApp small,
+        .stApp [data-testid="stCaptionContainer"],
+        .stApp [data-testid="stWidgetLabel"] p {
+            color: var(--mp-muted);
+            font-size: 0.96rem;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--mp-text);
+            font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            letter-spacing: -0.025em;
         }
 
         #MainMenu, footer, [data-testid="stDecoration"], [data-testid="stToolbar"] {
@@ -74,47 +105,198 @@ st.markdown(
             background: transparent;
         }
         [data-testid="stSidebar"] {
-            background: #20242c;
-            border-right: 1px solid rgba(255, 255, 255, 0.08);
+            width: 360px !important;
+            min-width: 360px !important;
+            background:
+                radial-gradient(circle at 15% 0%, rgba(75, 139, 190, 0.14), transparent 17rem),
+                linear-gradient(180deg, #172536 0%, #13202F 100%);
+            border-right: 1px solid #31445A;
+            box-shadow: 10px 0 32px rgba(15, 23, 42, 0.12);
+        }
+        [data-testid="stSidebar"] > div:first-child {
+            width: 360px !important;
+            padding: 1.25rem 1.15rem 2rem;
         }
         [data-testid="stSidebar"] [data-testid="stMarkdownContainer"],
+        [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
+        [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] span,
         [data-testid="stSidebar"] label,
-        [data-testid="stSidebar"] .stCaptionContainer {
-            color: #f8fafc;
+        [data-testid="stSidebar"] label p,
+        [data-testid="stSidebar"] .stCaptionContainer,
+        [data-testid="stSidebar"] [data-testid="stWidgetLabel"] p {
+            color: #D9E4EF;
         }
         [data-testid="stSidebar"] h1,
         [data-testid="stSidebar"] h2,
         [data-testid="stSidebar"] h3 {
-            color: #ffffff;
-            letter-spacing: 0;
+            color: #F8FAFC;
+            letter-spacing: -0.02em;
+        }
+        [data-testid="stSidebar"] h2 {
+            font-size: 1.35rem;
+            padding-bottom: 0.3rem;
+        }
+        .mp-filter-header {
+            margin-bottom: 1rem;
+            padding: 0.2rem 0.1rem 0.15rem;
+        }
+        .mp-filter-kicker {
+            color: #7DB7E8;
+            font-size: 0.76rem;
+            font-weight: 800;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+        .mp-filter-title {
+            margin-top: 0.18rem;
+            color: #FFFFFF;
+            font-size: 1.45rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+        }
+        .mp-filter-description {
+            margin-top: 0.35rem;
+            color: #B6C6D6;
+            font-size: 0.9rem;
+            line-height: 1.45;
+        }
+        .mp-filter-section {
+            margin: 0.3rem 0 0.65rem;
+            color: #8FB7D8;
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+        .mp-filter-summary {
+            margin: 0.9rem 0 0.65rem;
+            padding: 0.8rem 0.9rem;
+            color: #C9D7E5;
+            background: rgba(91, 139, 181, 0.12);
+            border: 1px solid rgba(125, 183, 232, 0.22);
+            border-radius: 12px;
+            font-size: 0.88rem;
+            line-height: 1.5;
+        }
+        .mp-filter-summary strong {
+            color: #FFFFFF;
+        }
+        [data-testid="stSidebar"] hr {
+            border-color: rgba(203, 213, 225, 0.16);
+            margin: 1.2rem 0;
         }
         [data-testid="stSidebar"] .stDataFrame {
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            border: 1px solid #3A4D62;
+            border-radius: 14px;
+            background: #F8FAFC;
+            box-shadow: 0 8px 24px rgba(2, 8, 23, 0.16);
         }
         [data-testid="stSidebar"] code {
-            color: #8de1d3;
-            background: #161a21;
-            border: 1px solid rgba(255, 255, 255, 0.06);
+            color: #B8D9F4;
+            background: #101B28;
+            border: 1px solid #34485D;
+            border-radius: 10px;
+        }
+        [data-testid="stSidebar"] div[data-baseweb="select"] > div,
+        [data-testid="stSidebar"] div[data-baseweb="input"] > div,
+        [data-testid="stSidebar"] [data-testid="stTextInput"] input,
+        [data-testid="stSidebar"] [data-testid="stNumberInput"] input {
+            color: var(--mp-text);
+            background: #F8FAFC;
+            border-color: #AEBECD;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(2, 8, 23, 0.12);
+        }
+        [data-testid="stSidebar"] div[data-baseweb="select"] span,
+        [data-testid="stSidebar"] input {
+            color: var(--mp-text);
+        }
+        [data-testid="stSidebar"] [data-testid="stCheckbox"] label,
+        [data-testid="stSidebar"] [data-testid="stCheckbox"] label span,
+        [data-testid="stSidebar"] [data-testid="stSliderTickBarMin"],
+        [data-testid="stSidebar"] [data-testid="stSliderTickBarMax"] {
+            color: #C5D3E0;
+        }
+        [data-testid="stSidebar"] [data-testid="stSliderTickBar"] {
+            color: #9FB1C2;
+        }
+        [data-testid="stSidebar"] [data-testid="stSlider"] [data-baseweb="slider"] > div > div {
+            background: #D7E1EC;
+        }
+        [data-testid="stSidebar"] [data-testid="stSlider"] [role="slider"] {
+            background: var(--mp-primary);
+            box-shadow: 0 2px 10px rgba(46, 91, 132, 0.18);
+        }
+        [data-testid="stSidebar"] .stCodeBlock,
+        [data-testid="stSidebar"] .stTextInput,
+        [data-testid="stSidebar"] .stDataFrame {
+            margin-top: 0.35rem;
+        }
+        [data-testid="stSidebar"] [data-testid="stForm"] {
+            padding: 1rem;
+            background: rgba(31, 48, 67, 0.92);
+            border: 1px solid #354A60;
+            border-radius: 16px;
+            box-shadow: 0 14px 30px rgba(2, 8, 23, 0.18);
+        }
+        [data-testid="stSidebar"] [data-testid="stForm"] [data-testid="stWidgetLabel"] p {
+            color: #E3EBF3;
+            font-size: 0.88rem;
+            font-weight: 700;
+        }
+        [data-testid="stSidebar"] [data-testid="stFormSubmitButton"] button {
+            width: 100%;
+            margin-top: 0.4rem;
+            color: #FFFFFF;
+            background: #3F7EAF;
+            border: 1px solid #5593C2;
+            border-radius: 10px;
+            box-shadow: 0 7px 18px rgba(2, 8, 23, 0.24);
+        }
+        [data-testid="stSidebar"] [data-testid="stFormSubmitButton"] button p {
+            color: #FFFFFF;
+        }
+        [data-testid="stSidebar"] [data-testid="stFormSubmitButton"] button:hover {
+            color: #FFFFFF;
+            background: #4D8DBE;
+            border-color: #72ACD7;
+        }
+        [data-testid="stSidebar"] [data-testid="stExpander"] {
+            margin-top: 0.55rem;
+            background: rgba(31, 48, 67, 0.76);
+            border-color: #354A60;
+            box-shadow: none;
+        }
+        [data-testid="stSidebar"] [data-testid="stExpander"] summary p {
+            color: #DCE7F1;
+            font-weight: 700;
+        }
+        [data-testid="stSidebar"] [data-testid="stExpander"] summary svg {
+            fill: #AFC2D4;
+        }
+        [data-testid="stSidebar"] [data-testid="stCheckbox"] label span {
+            color: #D9E4EF;
         }
         .block-container {
-            max-width: 1540px;
-            padding-top: 1rem;
-            padding-bottom: 1.5rem;
-            padding-left: 1.3rem;
-            padding-right: 1.3rem;
+            max-width: 1580px;
+            padding-top: 1.25rem;
+            padding-bottom: 2rem;
+            padding-left: 1.6rem;
+            padding-right: 1.6rem;
         }
         .stApp {
-            background: linear-gradient(180deg, #f3f6fa 0%, #eef2f6 100%);
+            background: var(--mp-bg);
         }
         .mp-hero {
-            background: #ffffff;
-            border: 1px solid var(--mp-border);
-            border-left: 5px solid var(--mp-secondary);
-            border-radius: 8px;
-            padding: 1rem 1.15rem;
-            color: var(--mp-text);
-            box-shadow: var(--mp-shadow);
-            margin-bottom: 0.8rem;
+            background:
+                radial-gradient(circle at 88% 20%, rgba(255, 255, 255, 0.14), transparent 16rem),
+                linear-gradient(120deg, #304C68 0%, var(--mp-primary) 68%, #54779B 125%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 18px;
+            padding: 1.35rem 1.5rem;
+            color: #ffffff;
+            box-shadow: 0 14px 34px rgba(46, 91, 132, 0.16);
+            margin-bottom: 1rem;
             display: grid;
             grid-template-columns: minmax(0, 1fr) auto;
             gap: 1rem;
@@ -122,113 +304,127 @@ st.markdown(
         }
         .mp-hero h1 {
             margin: 0;
-            font-size: 1.55rem;
+            color: #ffffff;
+            font-size: clamp(1.7rem, 2.6vw, 2.2rem);
             line-height: 1.15;
-            letter-spacing: 0;
+            letter-spacing: -0.035em;
         }
         .mp-hero p {
-            margin: 0.28rem 0 0;
-            color: var(--mp-muted);
-            font-size: 0.95rem;
+            margin: 0.5rem 0 0;
+            color: rgba(255, 255, 255, 0.92);
+            font-size: 1.04rem;
+            line-height: 1.55;
             max-width: 960px;
         }
         .mp-status {
             display: inline-flex;
             align-items: center;
             gap: 0.45rem;
-            color: #0f513d;
-            background: #dff7ed;
-            border: 1px solid #b7ebd3;
+            color: #FFFFFF;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.22);
             border-radius: 999px;
-            padding: 0.38rem 0.65rem;
-            font-size: 0.82rem;
+            padding: 0.45rem 0.75rem;
+            font-size: 0.92rem;
             font-weight: 700;
+            backdrop-filter: blur(8px);
         }
         .mp-card {
             background: var(--mp-surface);
             border: 1px solid var(--mp-border);
-            border-radius: 8px;
+            border-radius: var(--mp-radius);
             padding: 1rem 1rem 0.9rem;
             box-shadow: var(--mp-shadow);
         }
         .mp-card-label {
-            font-size: 0.82rem;
+            font-size: 0.9rem;
             text-transform: uppercase;
             letter-spacing: 0.08em;
             color: var(--mp-muted);
             margin-bottom: 0.35rem;
         }
         .mp-card-value {
-            font-size: 1.5rem;
+            font-size: 1.7rem;
             font-weight: 700;
             color: var(--mp-text);
             line-height: 1.1;
         }
         .mp-card-hint {
             margin-top: 0.35rem;
-            color: #475569;
-            font-size: 0.9rem;
+            color: var(--mp-muted);
+            font-size: 0.98rem;
         }
         .mp-section-title {
-            font-size: 1rem;
-            font-weight: 700;
+            font-size: 1.28rem;
+            font-weight: 800;
             color: var(--mp-text);
-            margin-bottom: 0.3rem;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.25rem;
         }
         .mp-section-caption {
             color: var(--mp-muted);
-            margin-bottom: 0.9rem;
+            font-size: 1rem;
+            line-height: 1.5;
+            margin-bottom: 1rem;
         }
         .mp-metric-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-            gap: 0.65rem;
-            margin: 0.75rem 0 0.8rem;
+            gap: 0.8rem;
+            margin: 0.9rem 0 1rem;
         }
         .mp-metric-card {
-            background: #ffffff;
+            background: var(--mp-surface);
             border: 1px solid var(--mp-border);
-            border-left: 4px solid var(--mp-primary);
-            border-radius: 8px;
-            padding: 0.8rem 0.85rem 0.75rem;
+            border-top: 3px solid var(--mp-primary);
+            border-radius: var(--mp-radius);
+            padding: 0.95rem 1rem 0.9rem;
             box-shadow: var(--mp-shadow);
             position: relative;
             overflow: hidden;
+            transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+        }
+        .mp-metric-card:hover {
+            transform: translateY(-2px);
+            border-color: #B8C9DB;
+            box-shadow: var(--mp-shadow-hover);
         }
         .mp-metric-label {
             text-transform: uppercase;
-            letter-spacing: 0.04em;
-            font-size: 0.72rem;
+            letter-spacing: 0.075em;
+            font-size: 0.8rem;
             color: var(--mp-muted);
-            margin-bottom: 0.32rem;
+            font-weight: 700;
+            margin-bottom: 0.45rem;
         }
         .mp-metric-value {
-            font-size: 1.35rem;
+            font-size: 1.6rem;
             font-weight: 800;
-            color: var(--mp-text);
+            color: var(--mp-primary);
             line-height: 1.1;
+            letter-spacing: -0.025em;
         }
         .mp-metric-hint {
             margin-top: 0.3rem;
-            color: #475569;
-            font-size: 0.82rem;
+            color: var(--mp-muted);
+            font-size: 0.92rem;
         }
         .mp-panel {
             background: var(--mp-surface);
             border: 1px solid var(--mp-border);
-            border-radius: 8px;
-            padding: 0.9rem 0.95rem 1rem;
+            border-radius: var(--mp-radius);
+            padding: 1rem 1.05rem 1.1rem;
             box-shadow: var(--mp-shadow);
-            margin-bottom: 0.8rem;
+            margin-bottom: 1rem;
         }
         .mp-panel-title {
-            font-size: 0.98rem;
+            font-size: 1.06rem;
             font-weight: 700;
             color: var(--mp-text);
         }
         .mp-panel-subtitle {
             color: var(--mp-muted);
-            font-size: 0.9rem;
+            font-size: 0.98rem;
             margin-top: 0.2rem;
             margin-bottom: 0.8rem;
         }
@@ -237,8 +433,8 @@ st.markdown(
             flex-wrap: wrap;
             gap: 0.75rem;
             margin-bottom: 0.4rem;
-            color: #334155;
-            font-size: 0.88rem;
+            color: var(--mp-muted);
+            font-size: 0.96rem;
         }
         .mp-legend-item {
             display: inline-flex;
@@ -263,7 +459,7 @@ st.markdown(
         }
         .mp-axis-label {
             fill: var(--mp-muted);
-            font-size: 11px;
+            font-size: 12px;
         }
         .mp-bar-list {
             display: grid;
@@ -278,15 +474,15 @@ st.markdown(
         .mp-bar-label {
             color: var(--mp-text);
             font-weight: 600;
-            font-size: 0.86rem;
+            font-size: 0.94rem;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
         .mp-bar-track {
-            background: #e8edf3;
+            background: #EAF0F5;
             border-radius: 4px;
-            height: 8px;
+            height: 9px;
             overflow: hidden;
         }
         .mp-bar-fill {
@@ -295,25 +491,25 @@ st.markdown(
         }
         .mp-bar-value {
             text-align: right;
-            color: #334155;
+            color: var(--mp-text);
             font-weight: 600;
         }
         .mp-empty {
             color: var(--mp-muted);
             background: var(--mp-surface-soft);
             border: 1px dashed rgba(148, 163, 184, 0.35);
-            border-radius: 8px;
+            border-radius: 10px;
             padding: 0.9rem 1rem;
         }
         .mp-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.92rem;
+            font-size: 0.98rem;
         }
         .mp-table th {
             text-align: left;
             color: var(--mp-muted);
-            font-size: 0.78rem;
+            font-size: 0.84rem;
             text-transform: uppercase;
             letter-spacing: 0.05em;
             padding: 0.55rem 0.35rem;
@@ -331,29 +527,29 @@ st.markdown(
             margin: 0.2rem 0 0.8rem;
         }
         .mp-summary-card {
-            background: #ffffff;
+            background: var(--mp-surface);
             border: 1px solid var(--mp-border);
-            border-radius: 8px;
-            padding: 0.8rem 0.9rem;
+            border-radius: var(--mp-radius);
+            padding: 0.95rem 1rem;
             box-shadow: var(--mp-shadow);
         }
         .mp-summary-label {
-            font-size: 0.76rem;
+            font-size: 0.82rem;
             text-transform: uppercase;
             letter-spacing: 0.08em;
             color: var(--mp-muted);
             margin-bottom: 0.35rem;
         }
         .mp-summary-value {
-            font-size: 1.2rem;
+            font-size: 1.32rem;
             font-weight: 800;
             color: var(--mp-text);
             line-height: 1.2;
         }
         .mp-summary-note {
             margin-top: 0.3rem;
-            color: #475569;
-            font-size: 0.88rem;
+            color: var(--mp-muted);
+            font-size: 0.96rem;
         }
         .mp-badge-row {
             display: flex;
@@ -365,12 +561,13 @@ st.markdown(
             display: inline-flex;
             align-items: center;
             gap: 0.45rem;
-            background: #ffffff;
+            background: var(--mp-surface);
             border: 1px solid var(--mp-border);
-            border-radius: 6px;
-            padding: 0.35rem 0.65rem;
+            border-radius: 999px;
+            padding: 0.4rem 0.72rem;
             color: var(--mp-text);
-            font-size: 0.84rem;
+            font-size: 0.92rem;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
         }
         .mp-badge strong {
             color: var(--mp-primary);
@@ -385,18 +582,171 @@ st.markdown(
             margin-bottom: 0.55rem;
             line-height: 1.45;
         }
-        .stDataFrame, .stDataFrame div {
-            border-radius: 8px;
+        .mp-insight-card {
+            min-height: 190px;
+            border-top: 3px solid var(--mp-primary);
         }
-        div[data-testid="stTabs"] button {
+        .mp-insight-card .mp-signal-list {
+            color: var(--mp-muted);
+            padding-left: 1.05rem;
+        }
+        .mp-insight-card .mp-signal-list li::marker {
+            color: var(--mp-accent);
+        }
+        .stDataFrame {
+            background: var(--mp-surface);
+            border: 1px solid var(--mp-border);
+            border-radius: var(--mp-radius);
+            overflow: hidden;
+            box-shadow: var(--mp-shadow);
+        }
+        div[data-testid="stTabs"] [data-baseweb="tab-list"] {
+            gap: 0.35rem;
+            background: #EAF0F5;
+            border-radius: 12px;
+            padding: 0.3rem;
+        }
+        div[data-testid="stTabs"] button[role="tab"] {
             font-weight: 700;
-            letter-spacing: 0;
+            color: #4D5E70;
+            border-radius: 9px;
+            padding: 0.65rem 1rem;
+            font-size: 0.98rem;
+            border-bottom: 0;
+        }
+        div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
+            color: #FFFFFF;
+            background: var(--mp-primary);
+            box-shadow: 0 2px 6px rgba(46, 91, 132, 0.2);
+        }
+        div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] p,
+        div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] span {
+            color: #FFFFFF;
+        }
+        div[data-testid="stTabs"] button[role="tab"]:not([aria-selected="true"]) p,
+        div[data-testid="stTabs"] button[role="tab"]:not([aria-selected="true"]) span {
+            color: #4D5E70;
+        }
+        div[data-testid="stTabs"] [data-baseweb="tab-highlight"] {
+            display: none;
+        }
+        div[data-baseweb="select"] > div,
+        div[data-baseweb="input"] > div,
+        [data-testid="stNumberInput"] input,
+        [data-testid="stTextInput"] input {
+            color: var(--mp-text);
+            background: var(--mp-surface);
+            border-color: var(--mp-border);
+            border-radius: 10px;
+        }
+        div[data-baseweb="select"] span,
+        div[data-baseweb="input"] input,
+        [data-testid="stNumberInput"] input,
+        [data-testid="stTextInput"] input {
+            color: var(--mp-text);
+            -webkit-text-fill-color: var(--mp-text);
+        }
+        div[data-baseweb="popover"],
+        div[data-baseweb="popover"] ul,
+        div[data-baseweb="menu"],
+        div[role="listbox"] {
+            color: var(--mp-text);
+            background: var(--mp-surface);
+        }
+        div[role="option"],
+        div[role="option"] span {
+            color: var(--mp-text);
+            background: var(--mp-surface);
+        }
+        div[role="option"]:hover,
+        div[role="option"][aria-selected="true"] {
+            background: #EDF3F8;
+        }
+        [data-testid="stSlider"] [role="slider"] {
+            background: var(--mp-primary);
+            border-color: #ffffff;
+            box-shadow: 0 1px 5px rgba(46, 91, 132, 0.24);
+        }
+        .stButton button,
+        .stDownloadButton button {
+            border-radius: 10px;
+            min-height: 2.65rem;
+            font-weight: 700;
+            transition: transform 140ms ease, box-shadow 140ms ease;
+        }
+        .stButton button:hover,
+        .stDownloadButton button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
         }
         .stDownloadButton button {
-            border-radius: 6px;
             border: 1px solid var(--mp-border);
-            background: #ffffff;
+            background: #FDFEFE;
             color: var(--mp-primary);
+        }
+        .stButton button[kind="primary"] {
+            border: 0;
+            background: var(--mp-primary);
+            color: #ffffff;
+        }
+        .stButton button[kind="primary"] p,
+        .stButton button[kind="primary"] span {
+            color: #FFFFFF;
+        }
+        .stButton button[kind="primary"]:hover {
+            background: var(--mp-primary-dark);
+        }
+        [data-testid="stAlert"] {
+            color: var(--mp-text);
+            background: var(--mp-surface);
+            border-radius: 12px;
+            border: 1px solid var(--mp-border);
+        }
+        [data-testid="stExpander"] {
+            color: var(--mp-text);
+            background: var(--mp-surface);
+            border: 1px solid var(--mp-border);
+            border-radius: 12px;
+        }
+        [data-testid="stCheckbox"] label span,
+        [data-testid="stRadio"] label span,
+        [data-testid="stSelectSlider"] p,
+        [data-testid="stSlider"] p {
+            color: var(--mp-text);
+            font-size: 0.98rem;
+        }
+
+        [data-testid="stDataFrame"] div[role="columnheader"],
+        [data-testid="stDataFrame"] div[role="gridcell"] {
+            font-size: 0.96rem;
+        }
+
+        [data-testid="stDataFrame"] div[role="columnheader"] {
+            color: #4B5E71;
+            background: #F3F7FA;
+        }
+
+        @media (max-width: 760px) {
+            .block-container {
+                padding: 0.75rem 0.8rem 1.5rem;
+            }
+            .mp-hero {
+                grid-template-columns: 1fr;
+                padding: 1.1rem;
+                border-radius: 14px;
+            }
+            .mp-status {
+                justify-self: start;
+            }
+            .mp-metric-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .mp-metric-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
     """,
@@ -422,10 +772,16 @@ def load_summary(start_month: str, end_month: str) -> dict[str, Any]:
 
 @st.cache_data(ttl=300)
 def load_hourly(start_month: str, end_month: str, limit: int) -> pd.DataFrame:
-    rows = api_get(
+    payload = api_get(
         "/api/hourly-demand",
-        {"start_month": start_month, "end_month": end_month, "limit": limit},
+        {
+            "start_month": start_month,
+            "end_month": end_month,
+            "limit": limit,
+            "offset": 0,
+        },
     )
+    rows = payload.get("rows", []) if isinstance(payload, dict) else payload
     df = pd.DataFrame(rows)
     if not df.empty:
         df["pickup_hour"] = pd.to_datetime(df["pickup_hour"])
@@ -433,8 +789,25 @@ def load_hourly(start_month: str, end_month: str, limit: int) -> pd.DataFrame:
 
 
 @st.cache_data(ttl=300)
-def load_zones(limit: int) -> pd.DataFrame:
-    return pd.DataFrame(api_get("/api/zone-summary", {"limit": limit}))
+def load_demand_trends(start_month: str, end_month: str) -> dict[str, Any]:
+    return api_get(
+        "/api/demand-trends",
+        {"start_month": start_month, "end_month": end_month},
+    )
+
+
+@st.cache_data(ttl=300)
+def load_zones(start_month: str, end_month: str, limit: int) -> pd.DataFrame:
+    return pd.DataFrame(
+        api_get(
+            "/api/zone-summary",
+            {
+                "start_month": start_month,
+                "end_month": end_month,
+                "limit": limit,
+            },
+        )
+    )
 
 
 @st.cache_data(ttl=300)
@@ -442,6 +815,24 @@ def load_payment_tip(start_month: str, end_month: str) -> pd.DataFrame:
     return pd.DataFrame(
         api_get(
             "/api/payment-tip-summary",
+            {"start_month": start_month, "end_month": end_month},
+        )
+    )
+
+@st.cache_data(ttl=300)
+def load_zone_trend(start_month: str, end_month: str, limit: int = 5) -> pd.DataFrame:
+    return pd.DataFrame(
+        api_get(
+            "/api/zone-trend",
+            {"start_month": start_month, "end_month": end_month, "limit": limit},
+        )
+    )
+
+@st.cache_data(ttl=300)
+def load_weather_correlation(start_month: str, end_month: str) -> pd.DataFrame:
+    return pd.DataFrame(
+        api_get(
+            "/api/weather-correlation",
             {"start_month": start_month, "end_month": end_month},
         )
     )
@@ -515,6 +906,17 @@ def load_all_zones() -> list[dict[str, Any]]:
         return []
 
 
+@st.cache_data(ttl=3600)
+def load_route_estimate(pickup_zone_id: int, dropoff_zone_id: int) -> dict[str, Any]:
+    return api_get(
+        "/api/route-estimate",
+        {
+            "pickup_zone_id": int(pickup_zone_id),
+            "dropoff_zone_id": int(dropoff_zone_id),
+        },
+    )
+
+
 @st.cache_data(ttl=300)
 def load_all_ml_metrics() -> dict[str, Any]:
     try:
@@ -567,15 +969,24 @@ def human_series_label(value: Any) -> str:
     return str(value)
 
 
-def render_metric_strip(items: list[tuple[str, str, str]]) -> str:
-    cards = "".join(
-        f'<div class="mp-metric-card"><div class="mp-metric-label">{label}</div><div class="mp-metric-value">{value}</div><div class="mp-metric-hint">{hint}</div></div>'
-        for label, value, hint in items
-    )
-    return f'<div class="mp-metric-grid">{cards}</div>'
+def render_metric_strip(items: list[tuple[str, str, str] | tuple[str, str, str, str]]) -> str:
+    cards = []
+    for item in items:
+        label = item[0]
+        value = item[1]
+        hint = item[2]
+        delta_html = ""
+        if len(item) == 4 and item[3]:
+            delta = item[3]
+            color = "#10B981" if delta.startswith("↑") else "#EF4444" if delta.startswith("↓") else "#6B7280"
+            delta_html = f'<span style="color: {color}; font-weight: 600; margin-left: 0.5rem; font-size: 0.85em;">{delta}</span>'
+        cards.append(f'<div class="mp-metric-card"><div class="mp-metric-label">{label}</div><div class="mp-metric-value" style="display: flex; align-items: baseline;">{value}{delta_html}</div><div class="mp-metric-hint">{hint}</div></div>')
+    
+    cards_html = "".join(cards)
+    return f'<div class="mp-metric-grid">{cards_html}</div>'
 
 
-def render_bar_panel(title: str, subtitle: str, labels: list[str], values: list[float], accent: str = "#1d4ed8") -> str:
+def render_bar_panel(title: str, subtitle: str, labels: list[str], values: list[float], accent: str = "#0B60AB") -> str:
     if not values:
         return f'<div class="mp-panel"><div class="mp-panel-title">{title}</div><div class="mp-panel-subtitle">{subtitle}</div><div class="mp-empty">Không có dữ liệu.</div></div>'
 
@@ -685,26 +1096,19 @@ def render_signal_panel(title: str, signals: list[str]) -> str:
     return f'<div class="mp-panel"><div class="mp-panel-title">{title}</div><ul class="mp-signal-list">{items}</ul></div>'
 
 
+def render_insight_card(title: str, lines: list[str]) -> str:
+    items = "".join(f"<li>{line}</li>" for line in lines)
+    return (
+        f'<div class="mp-panel mp-insight-card">'
+        f'<div class="mp-panel-title">{title}</div>'
+        f'<ul class="mp-signal-list">{items}</ul>'
+        f"</div>"
+    )
+
+
 def render_badge_strip(items: list[tuple[str, str]]) -> str:
     badges = "".join(f'<span class="mp-badge"><strong>{label}</strong>{value}</span>' for label, value in items)
     return f'<div class="mp-badge-row">{badges}</div>'
-
-
-def agg_monthly(hourly_df: pd.DataFrame) -> pd.DataFrame:
-    if hourly_df.empty:
-        return hourly_df
-    monthly = (
-        hourly_df.assign(pickup_month=pd.to_datetime(hourly_df["pickup_year_month"] + "-01"))
-        .groupby("pickup_month", as_index=False)
-        .agg(
-            total_demand=("total_demand", "sum"),
-            active_zones=("active_zones", "mean"),
-            avg_temperature_f=("avg_temperature_f", "mean"),
-            avg_precipitation_mm=("avg_precipitation_mm", "mean"),
-        )
-        .sort_values("pickup_month")
-    )
-    return monthly
 
 
 def enrich_hourly(hourly_df: pd.DataFrame) -> pd.DataFrame:
@@ -722,7 +1126,8 @@ def enrich_zones(zone_df: pd.DataFrame) -> pd.DataFrame:
     if zone_df.empty:
         return zone_df
     enriched = zone_df.copy()
-    enriched["demand_share"] = enriched["total_demand"] / enriched["total_demand"].sum()
+    if "demand_share" not in enriched:
+        enriched["demand_share"] = pd.NA
     enriched["zone_rank"] = range(1, len(enriched) + 1)
     enriched["demand_intensity"] = enriched["total_demand"] / enriched["active_hours"].replace(0, pd.NA)
     return enriched
@@ -743,9 +1148,9 @@ st.markdown(
     <div class="mp-hero">
         <div>
             <h1>Bảng điều khiển vận hành MetroPulse</h1>
-            <p>Nhu cầu taxi NYC, bối cảnh thời tiết, hiệu suất zone, hành vi thanh toán/tip và kết quả dự báo ML từ PostgreSQL mart qua FastAPI.</p>
+            <p>Analytics mart được phục vụ từ PostgreSQL qua FastAPI; Demand demo dùng artifact đã lưu và Fare/Tip inference được phục vụ qua FastAPI.</p>
         </div>
-        <div class="mp-status">Mart đang hoạt động</div>
+        <div class="mp-status">PostgreSQL + FastAPI</div>
     </div>
     """,
     unsafe_allow_html=True,
@@ -771,70 +1176,197 @@ else:
     default_end_index = 0
 
 with st.sidebar:
-    st.header("Bộ lọc báo cáo")
-    if available_months and len(available_months) >= 2:
-        selected_months = st.select_slider(
-            "Khoảng tháng",
-            options=available_months,
-            value=(available_months[default_start_index], available_months[default_end_index]),
-        )
-        if isinstance(selected_months, tuple):
-            start_month, end_month = selected_months
-        else:
-            start_month = end_month = selected_months
-    else:
-        start_month = st.text_input("Tháng bắt đầu", value=default_start_month)
-        end_month = st.text_input("Tháng kết thúc", value=default_end_month)
+    st.markdown(
+        """
+        <div class="mp-filter-header">
+            <div class="mp-filter-kicker">Điều khiển báo cáo</div>
+            <div class="mp-filter-title">Bộ lọc dữ liệu</div>
+            <div class="mp-filter-description">
+                Chọn phạm vi phân tích và mức chi tiết trước khi tải dữ liệu.
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
-    hourly_limit = st.slider("Số điểm giờ", min_value=200, max_value=20000, value=5000, step=200)
-    zone_limit = st.slider("Số zone top", min_value=5, max_value=50, value=20, step=5)
-    show_raw_tables = st.checkbox("Hiện bảng thô", value=False)
-    st.divider()
-    st.subheader("Kết nối")
-    st.code(API_URL)
-    st.caption(f"Giai đoạn: {format_month(start_month)} đến {format_month(end_month)}")
-    st.subheader("Các mart PostgreSQL")
-    st.dataframe(pd.DataFrame(meta.get("tables", [])), hide_index=True, use_container_width=True)
+    with st.form("dashboard_filter_form", border=False):
+        st.markdown('<div class="mp-filter-section">Thời gian phân tích</div>', unsafe_allow_html=True)
+        if available_months:
+            selected_start_month = st.selectbox(
+                "Từ tháng",
+                options=available_months,
+                index=default_start_index,
+                format_func=format_month,
+            )
+            selected_end_month = st.selectbox(
+                "Đến tháng",
+                options=available_months,
+                index=default_end_index,
+                format_func=format_month,
+            )
+        else:
+            selected_start_month = st.text_input(
+                "Từ tháng",
+                value=default_start_month,
+            )
+            selected_end_month = st.text_input(
+                "Đến tháng",
+                value=default_end_month,
+            )
+
+        st.markdown('<div class="mp-filter-section">Mức độ chi tiết</div>', unsafe_allow_html=True)
+        hourly_limit = st.selectbox(
+            "Bảng nhu cầu theo giờ",
+            options=[1000, 2500, 5000, 10000, 20000],
+            index=2,
+            format_func=lambda value: f"{value:,} dòng",
+        )
+        zone_limit = st.selectbox(
+            "Số zone hiển thị",
+            options=[10, 15, 20, 30, 50],
+            index=2,
+            format_func=lambda value: f"Top {value} zone",
+        )
+        show_raw_tables = st.checkbox("Hiển thị bảng dữ liệu thô", value=False)
+        st.form_submit_button("Áp dụng bộ lọc", type="primary", use_container_width=True)
+
+    if (
+        available_months
+        and available_months.index(selected_start_month) > available_months.index(selected_end_month)
+    ):
+        start_month, end_month = selected_end_month, selected_start_month
+        st.warning("Mốc bắt đầu đứng sau mốc kết thúc, hệ thống đã tự đổi thứ tự.")
+    else:
+        start_month, end_month = selected_start_month, selected_end_month
+
+    st.markdown(
+        f"""
+        <div class="mp-filter-summary">
+            Đang phân tích<br>
+            <strong>{format_month(start_month)} - {format_month(end_month)}</strong>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    with st.expander("Thông tin hệ thống", expanded=False):
+        st.caption("Dashboard API")
+        st.code(API_URL, language=None)
+        st.caption("Các mart PostgreSQL")
+        mart_table = pd.DataFrame(meta.get("tables", [])).rename(
+            columns={"table_name": "Tên mart", "row_count": "Số dòng"}
+        )
+        st.dataframe(mart_table, hide_index=True, use_container_width=True)
 
 try:
     summary = load_summary(start_month, end_month)
+    trends = load_demand_trends(start_month, end_month)
     hourly_df = enrich_hourly(load_hourly(start_month, end_month, hourly_limit))
-    zone_df = enrich_zones(load_zones(zone_limit))
+    zone_df = enrich_zones(load_zones(start_month, end_month, 263))
     payment_df = enrich_payments(load_payment_tip(start_month, end_month))
+    zone_trend_df = load_zone_trend(start_month, end_month, 5)
+    weather_corr_df = load_weather_correlation(start_month, end_month)
 except requests.RequestException as exc:
     st.error(f"Không thể tải dữ liệu dashboard từ FastAPI: {exc}")
     st.stop()
 
-monthly_df = agg_monthly(hourly_df)
+monthly_df = pd.DataFrame(trends.get("monthly", []))
+if not monthly_df.empty:
+    monthly_df["pickup_month"] = pd.to_datetime(
+        monthly_df["pickup_year_month"] + "-01"
+    )
+hourly_profile = pd.DataFrame(trends.get("hourly", []))
+day_profile = pd.DataFrame(trends.get("weekday", []))
+if not day_profile.empty:
+    day_profile["day_name_vi"] = day_profile["iso_day_of_week"].map(
+        {
+            1: "Thứ Hai",
+            2: "Thứ Ba",
+            3: "Thứ Tư",
+            4: "Thứ Năm",
+            5: "Thứ Sáu",
+            6: "Thứ Bảy",
+            7: "Chủ Nhật",
+        }
+    )
 
-latest_hour = hourly_df["pickup_hour"].max() if not hourly_df.empty else None
+latest_hour = pd.to_datetime(summary.get("last_data_hour")) if summary.get("last_data_hour") else None
+pipeline_updated_at = (
+    pd.to_datetime(summary.get("latest_dashboard_processed_at"))
+    if summary.get("latest_dashboard_processed_at")
+    else None
+)
 peak_hour = pd.to_datetime(summary.get("peak_hour")) if summary.get("peak_hour") else None
 peak_hour_label = peak_hour.strftime("%Y-%m-%d %H:00") if peak_hour is not None and not pd.isna(peak_hour) else "-"
 peak_hour_total = metric_value(summary.get("peak_total_demand"))
 top_zone = zone_df.iloc[0] if not zone_df.empty else None
-top_payment = payment_df.sort_values("trip_count", ascending=False).iloc[0] if not payment_df.empty else None
+leading_payment_type = summary.get("leading_payment_type")
+leading_payment_label = (
+    normalize_payment_label(leading_payment_type)
+    if leading_payment_type is not None
+    else None
+)
 avg_tip_percent = summary.get("avg_tip_percent")
 avg_fare_amount = summary.get("avg_fare_amount")
 avg_hourly_demand = safe_ratio(summary.get("total_demand"), summary.get("hourly_points"))
-total_demand = float(summary.get("total_demand") or 0)
-peak_share = safe_ratio(summary.get("peak_total_demand"), summary.get("total_demand"))
+peak_share = summary.get("rush_hour_share")
 top_zone_share = float(top_zone["demand_share"]) if top_zone is not None and pd.notna(top_zone["demand_share"]) else None
-weekend_mask = hourly_df["day_name"].isin(["Saturday", "Sunday"]) if not hourly_df.empty else pd.Series(dtype=bool)
-weekend_share = safe_ratio(hourly_df.loc[weekend_mask, "total_demand"].sum() if not hourly_df.empty else None, total_demand)
-cashless_share = None
-if not payment_df.empty:
-    payment_mix_total = payment_df.groupby("payment_type", as_index=False).agg(trip_count=("trip_count", "sum")).sort_values("trip_count", ascending=False)
-    if not payment_mix_total.empty:
-        payment_leader = payment_mix_total.iloc[0]
-        cashless_share = safe_ratio(payment_leader["trip_count"], payment_mix_total["trip_count"].sum())
+weekend_share = summary.get("weekend_share")
+cashless_share = summary.get("leading_payment_share")
+
+if latest_hour is not None and latest_hour.strftime("%Y-%m") < end_month:
+    st.warning(
+        "Dữ liệu API hiện chỉ phủ đến "
+        f"{latest_hour.strftime('%m/%Y')}, chưa đạt tháng kết thúc "
+        f"{format_month(end_month)} đã chọn."
+    )
+
+def get_delta_str(current: float, prev: float) -> str:
+    if not prev or prev == 0:
+        return ""
+    pct = ((current - prev) / prev) * 100
+    if pct > 0:
+        return f"↑ {pct:.1f}% vs kỳ trước"
+    elif pct < 0:
+        return f"↓ {abs(pct):.1f}% vs kỳ trước"
+    return "0% vs kỳ trước"
 
 metric_rows = [
-    ("Tổng nhu cầu", metric_value(summary.get("total_demand")), f"{metric_value(summary.get('hourly_points'))} bản ghi theo giờ"),
-    ("Nhu cầu giờ trung bình", metric_value(avg_hourly_demand), "Mức lưu lượng trung bình trên mỗi giờ đã xử lý"),
-    ("Zone hoạt động trung bình", metric_value(summary.get("avg_active_zones")), "Phạm vi phục vụ trong giai đoạn chọn"),
-    ("Nhu cầu trên mỗi zone", metric_value(summary.get("avg_demand_per_active_zone")), "Hữu ích để đánh giá áp lực theo khu vực"),
-    ("Giờ đỉnh nhu cầu", peak_hour_label, f"{peak_hour_total} chuyến tại đỉnh"),
-    ("Giá cước trung bình", metric_value(avg_fare_amount, " USD"), f"Tip trung bình: {metric_value(avg_tip_percent, '%') }".replace("  ", " ")),
+    (
+        "Tổng nhu cầu", 
+        metric_value(summary.get("total_demand")), 
+        f"{metric_value(summary.get('hourly_points'))} bản ghi theo giờ",
+        get_delta_str(summary.get("total_demand", 0), summary.get("prev_total_demand", 0))
+    ),
+    (
+        "Nhu cầu giờ trung bình", 
+        metric_value(avg_hourly_demand), 
+        "Mức lưu lượng trung bình trên mỗi giờ dữ liệu",
+        get_delta_str(avg_hourly_demand, summary.get("prev_avg_hourly_demand", 0))
+    ),
+    (
+        "Zone hoạt động trung bình", 
+        metric_value(summary.get("avg_active_zones")), 
+        "Phạm vi phục vụ trong giai đoạn chọn",
+        get_delta_str(summary.get("avg_active_zones", 0), summary.get("prev_avg_active_zones", 0))
+    ),
+    (
+        "Nhu cầu trên mỗi zone", 
+        metric_value(summary.get("avg_demand_per_active_zone")), 
+        "Hữu ích để đánh giá áp lực theo khu vực",
+        get_delta_str(summary.get("avg_demand_per_active_zone", 0), summary.get("prev_avg_demand_per_active_zone", 0))
+    ),
+    (
+        "Giờ đỉnh nhu cầu", 
+        peak_hour_label, 
+        f"{peak_hour_total} chuyến tại đỉnh"
+    ),
+    (
+        "Giá cước trung bình", 
+        metric_value(avg_fare_amount, " USD"), 
+        f"Tip trung bình: {metric_value(avg_tip_percent, '%')}".replace("  ", " "),
+        get_delta_str(avg_fare_amount, summary.get("prev_avg_fare_amount", 0))
+    ),
 ]
 st.markdown(render_metric_strip(metric_rows), unsafe_allow_html=True)
 
@@ -844,7 +1376,8 @@ badge_items = [
     ("Mart zone", f" {table_counts.get('dashboard_zone_summary', 0):,} dòng"),
     ("Mart thanh toán", f" {table_counts.get('dashboard_payment_tip_summary', 0):,} dòng"),
     ("Fare/tip", f" {metric_value(summary.get('fare_tip_trip_count'))} chuyến"),
-    ("Latest", f" {latest_hour.strftime('%Y-%m-%d %H:00') if latest_hour is not None else '-'}"),
+    ("Dữ liệu mới nhất", f" {latest_hour.strftime('%Y-%m-%d %H:00') if latest_hour is not None else '-'}"),
+    ("Pipeline cập nhật", f" {pipeline_updated_at.strftime('%Y-%m-%d %H:%M') if pipeline_updated_at is not None else '-'}"),
 ]
 st.markdown(render_badge_strip(badge_items), unsafe_allow_html=True)
 
@@ -855,9 +1388,9 @@ summary_items = [
         "Zone dẫn đầu đóng góp lớn nhất vào nhu cầu của giai đoạn đã chọn.",
     ),
     (
-        "Tỷ trọng giờ đỉnh",
+        "Tỷ trọng giờ cao điểm",
         f"{metric_value((peak_share or 0) * 100, '%')}" if peak_share is not None else "-",
-        "Phần nhu cầu được ghi nhận tại khung giờ có lưu lượng cao nhất.",
+        "Phần nhu cầu trong các giờ 07--09h và 17--19h.",
     ),
     (
         "Tỷ trọng cuối tuần",
@@ -867,16 +1400,16 @@ summary_items = [
     (
         "Tỷ trọng phương thức thanh toán dẫn đầu",
         f"{metric_value((cashless_share or 0) * 100, '%')}" if cashless_share is not None else "-",
-        f"Dẫn đầu: {top_payment['payment_type']}" if top_payment is not None else "Phương thức thanh toán phổ biến nhất trong giai đoạn.",
+        f"Dẫn đầu: {leading_payment_label}" if leading_payment_label is not None else "Phương thức thanh toán phổ biến nhất trong giai đoạn.",
     ),
 ]
 st.markdown(render_summary_grid(summary_items), unsafe_allow_html=True)
 
 business_signals = [
     f"Nhu cầu tập trung mạnh ở zone đứng đầu, chiếm {metric_value((top_zone_share or 0) * 100, '%')} trong giai đoạn đã chọn." if top_zone_share is not None else "Chưa tính được mức tập trung nhu cầu cho giai đoạn này.",
-    f"Giờ đỉnh đóng góp {metric_value((peak_share or 0) * 100, '%')} tổng nhu cầu, vì vậy năng lực phục vụ cần được bố trí cho các khung giờ cao điểm." if peak_share is not None else "Chưa có số liệu về mức tập trung ở giờ đỉnh.",
+    f"Các khung giờ cao điểm 07--09h và 17--19h đóng góp {metric_value((peak_share or 0) * 100, '%')} tổng nhu cầu." if peak_share is not None else "Chưa có số liệu về tỷ trọng giờ cao điểm.",
     f"Nhu cầu cuối tuần chiếm {metric_value((weekend_share or 0) * 100, '%')} tổng nhu cầu, hữu ích cho kế hoạch ca trực và phân bổ phương tiện." if weekend_share is not None else "Chưa có số liệu nhu cầu cuối tuần.",
-    f"Phương thức thanh toán phổ biến nhất là {top_payment['payment_type']} với tỷ trọng {metric_value((cashless_share or 0) * 100, '%')} trên toàn giai đoạn." if top_payment is not None and cashless_share is not None else "Chưa có số liệu về cơ cấu thanh toán.",
+    f"Phương thức thanh toán phổ biến nhất là {leading_payment_label} với tỷ trọng {metric_value((cashless_share or 0) * 100, '%')} trên toàn giai đoạn." if leading_payment_label is not None and cashless_share is not None else "Chưa có số liệu về cơ cấu thanh toán.",
 ]
 st.markdown(render_signal_panel("Tín hiệu nghiệp vụ", business_signals), unsafe_allow_html=True)
 
@@ -884,7 +1417,7 @@ st.markdown(
     f"""
     <div class="mp-section-title">Tóm tắt điều hành</div>
     <div class="mp-section-caption">
-        Giai đoạn {format_month(start_month)} đến {format_month(end_month)} | Giờ xử lý mới nhất {latest_hour.strftime("%Y-%m-%d %H:00") if latest_hour is not None else '-'}
+        Giai đoạn {format_month(start_month)} đến {format_month(end_month)} | Giờ dữ liệu mới nhất {latest_hour.strftime("%Y-%m-%d %H:00") if latest_hour is not None else '-'}
     </div>
     """,
     unsafe_allow_html=True,
@@ -892,46 +1425,37 @@ st.markdown(
 
 insight_cols = st.columns([1.4, 1, 1])
 with insight_cols[0]:
-    st.markdown("**Nhận định vận hành**")
     insight_lines = [
-        f"• Giờ có nhu cầu cao nhất: {peak_hour_label} với {peak_hour_total} chuyến",
-        f"• Zone dẫn đầu: {top_zone['pickup_zone']} ({top_zone['pickup_borough']})" if top_zone is not None else "• Zone dẫn đầu: -",
-        f"• Phương thức thanh toán chủ đạo: {top_payment['payment_type']}" if top_payment is not None else "• Phương thức thanh toán chủ đạo: -",
-        f"• Tỷ lệ tip trung bình: {metric_value(avg_tip_percent, '%')}" if avg_tip_percent is not None else "• Tỷ lệ tip trung bình: -",
+        f"Giờ có nhu cầu cao nhất: {peak_hour_label} với {peak_hour_total} chuyến",
+        f"Zone dẫn đầu: {top_zone['pickup_zone']} ({top_zone['pickup_borough']})" if top_zone is not None else "Zone dẫn đầu: -",
+        f"Phương thức thanh toán chủ đạo: {leading_payment_label}" if leading_payment_label is not None else "Phương thức thanh toán chủ đạo: -",
+        f"Tỷ lệ tip trung bình: {metric_value(avg_tip_percent, '%')}" if avg_tip_percent is not None else "Tỷ lệ tip trung bình: -",
     ]
-    st.markdown("\n".join(insight_lines))
+    st.markdown(render_insight_card("Nhận định vận hành", insight_lines), unsafe_allow_html=True)
 with insight_cols[1]:
-    st.markdown("**Độ phủ dữ liệu**")
-    st.write(f"Số tháng trong warehouse: {len(available_months) if available_months else metric_value(summary.get('hourly_points'))}")
-    st.write(f"Số điểm giờ đã tải: {len(hourly_df):,}")
-    st.write(f"Số dòng zone: {len(zone_df):,}")
+    coverage_lines = [
+        f"Số tháng trong warehouse: {len(available_months) if available_months else metric_value(summary.get('hourly_points'))}",
+        f"Số điểm giờ trong kỳ: {metric_value(summary.get('hourly_points'))}",
+        f"Số điểm giờ tải cho bảng: {len(hourly_df):,}",
+        f"Số dòng zone: {len(zone_df):,}",
+    ]
+    st.markdown(render_insight_card("Độ phủ dữ liệu", coverage_lines), unsafe_allow_html=True)
 with insight_cols[2]:
-    st.markdown("**Bối cảnh thời tiết**")
-    st.write(f"Nhiệt độ trung bình: {metric_value(summary.get('avg_temperature_f'), ' F')}")
-    st.write(f"Lượng mưa trung bình: {metric_value(summary.get('avg_precipitation_mm'), ' mm')}")
-    st.write(f"Tip trung bình: {metric_value(avg_tip_percent, '%')}")
+    weather_lines = [
+        f"Nhiệt độ trung bình: {metric_value(summary.get('avg_temperature_f'), ' F')}",
+        f"Lượng mưa trung bình: {metric_value(summary.get('avg_precipitation_mm'), ' mm')}",
+        f"Tip trung bình: {metric_value(avg_tip_percent, '%')}",
+    ]
+    st.markdown(render_insight_card("Bối cảnh thời tiết", weather_lines), unsafe_allow_html=True)
 
 tab_demand, tab_zones, tab_payments, tab_ml, tab_simulator = st.tabs(["Nhu cầu", "Zone", "Thanh toán & tip", "Dự báo ML", "Simulator Giá cước & Tip"])
 
 with tab_demand:
     st.markdown("<div class='mp-section-title'>Động lực nhu cầu</div>", unsafe_allow_html=True)
     st.caption("Xem nhu cầu taxi thay đổi theo tháng, theo giờ và theo điều kiện thời tiết.")
-    if hourly_df.empty or monthly_df.empty:
+    if monthly_df.empty or hourly_profile.empty or day_profile.empty:
         st.warning("Không có dữ liệu nhu cầu theo giờ cho giai đoạn đã chọn.")
     else:
-        hourly_profile = hourly_df.groupby("hour_of_day", as_index=False).agg(
-            total_demand=("total_demand", "sum"),
-            avg_temperature_f=("avg_temperature_f", "mean"),
-            avg_precipitation_mm=("avg_precipitation_mm", "mean"),
-        ).sort_values("hour_of_day")
-        day_profile = hourly_df.groupby("day_name", observed=False, as_index=False).agg(
-            total_demand=("total_demand", "sum"),
-            avg_temperature_f=("avg_temperature_f", "mean"),
-        )
-        day_profile["day_name"] = pd.Categorical(day_profile["day_name"], categories=DAY_ORDER, ordered=True)
-        day_profile = day_profile.sort_values("day_name")
-        day_profile["day_name_vi"] = day_profile["day_name"].astype(str).map(DAY_LABELS_VI).fillna(day_profile["day_name"].astype(str))
-
         top_row = st.columns([1.3, 1])
         with top_row[0]:
             st.markdown(
@@ -940,8 +1464,8 @@ with tab_demand:
                     "So sánh tổng nhu cầu với số zone hoạt động trong giai đoạn báo cáo đã chọn.",
                     [x.strftime("%b %y") for x in monthly_df["pickup_month"]],
                     [
-                        ("Tổng nhu cầu", monthly_df["total_demand"].astype(float).tolist(), "#1d4ed8"),
-                        ("Zone hoạt động", monthly_df["active_zones"].astype(float).tolist(), "#0f766e"),
+                        ("Tổng nhu cầu", monthly_df["total_demand"].astype(float).tolist(), "#0B60AB"),
+                        ("Zone hoạt động", monthly_df["avg_active_zones"].astype(float).tolist(), "#475569"),
                     ],
                 ),
                 unsafe_allow_html=True,
@@ -951,9 +1475,9 @@ with tab_demand:
                 render_bar_panel(
                     "Giờ cao điểm",
                     "Khung giờ tập trung lưu lượng trong ngày.",
-                    [f"{int(hour):02d}:00" for hour in hourly_profile["hour_of_day"]],
+                    [f"{int(hour):02d}:00" for hour in hourly_profile["hour"]],
                     hourly_profile["total_demand"].astype(float).tolist(),
-                    accent="#dc2626",
+                    accent="#EF4444",
                 ),
                 unsafe_allow_html=True,
             )
@@ -966,7 +1490,7 @@ with tab_demand:
                     "Hữu ích cho bố trí nhân sự, kế hoạch vận hành và năng lực phục vụ.",
                     day_profile["day_name_vi"].tolist(),
                     day_profile["total_demand"].astype(float).tolist(),
-                    accent="#7c3aed",
+                    accent="#0B60AB",
                 ),
                 unsafe_allow_html=True,
             )
@@ -977,15 +1501,18 @@ with tab_demand:
                     "Nhiệt độ và lượng mưa trung bình trong giai đoạn đã chọn.",
                     [x.strftime("%b %y") for x in monthly_df["pickup_month"]],
                     [
-                        ("Nhiệt độ (F)", monthly_df["avg_temperature_f"].astype(float).tolist(), "#ea580c"),
-                        ("Lượng mưa (mm)", monthly_df["avg_precipitation_mm"].astype(float).tolist(), "#0284c7"),
+                        ("Nhiệt độ (F)", monthly_df["avg_temperature_f"].astype(float).tolist(), "#EF4444"),
+                        ("Lượng mưa (mm)", monthly_df["avg_precipitation_mm"].astype(float).tolist(), "#0B60AB"),
                     ],
                 ),
                 unsafe_allow_html=True,
             )
 
         st.markdown("**Bảng vận hành**")
-        hourly_table = hourly_df[
+        if hourly_df.empty:
+            st.info("Không có dòng chi tiết theo giờ cho trang dữ liệu hiện tại.")
+        else:
+            hourly_table = hourly_df[
             [
                 "pickup_hour",
                 "pickup_year_month",
@@ -995,29 +1522,42 @@ with tab_demand:
                 "avg_temperature_f",
                 "avg_precipitation_mm",
             ]
-        ].sort_values("pickup_hour", ascending=False)
-        st.markdown(
-            render_table_panel(
-                "Snapshot nhu cầu theo giờ",
-                "Các dòng gần nhất để kiểm tra nhanh và đối soát chất lượng.",
-                hourly_table,
-                ["pickup_hour", "total_demand", "active_zones", "avg_demand_per_active_zone"],
-                headers={
-                    "pickup_hour": "Giờ đón",
-                    "total_demand": "Tổng nhu cầu",
-                    "active_zones": "Zone hoạt động",
-                    "avg_demand_per_active_zone": "Nhu cầu/zone",
-                },
-            ),
-            unsafe_allow_html=True,
-        )
-        st.dataframe(hourly_table, use_container_width=True, hide_index=True)
-        st.download_button(
-            "Tải CSV nhu cầu theo giờ",
-            data=df_to_csv(hourly_df),
-            file_name=f"hourly_demand_{start_month}_{end_month}.csv",
-            mime="text/csv",
-        )
+            ].sort_values("pickup_hour", ascending=False)
+            st.markdown(
+                render_table_panel(
+                    "Snapshot nhu cầu theo giờ",
+                    "Các dòng gần nhất để kiểm tra nhanh và đối soát chất lượng.",
+                    hourly_table,
+                    ["pickup_hour", "total_demand", "active_zones", "avg_demand_per_active_zone"],
+                    headers={
+                        "pickup_hour": "Giờ đón",
+                        "total_demand": "Tổng nhu cầu",
+                        "active_zones": "Zone hoạt động",
+                        "avg_demand_per_active_zone": "Nhu cầu/zone",
+                    },
+                ),
+                unsafe_allow_html=True,
+            )
+            st.dataframe(hourly_table, use_container_width=True, hide_index=True)
+            st.download_button(
+                "Tải CSV nhu cầu theo giờ",
+                data=df_to_csv(hourly_df),
+                file_name=f"hourly_demand_{start_month}_{end_month}.csv",
+                mime="text/csv",
+            )
+
+        st.markdown("<br><div class='mp-section-title'>Tương quan Thời tiết & Nhu cầu</div>", unsafe_allow_html=True)
+        st.caption("Biểu đồ phân tán thể hiện sự thay đổi của nhu cầu theo nhiệt độ và lượng mưa.")
+        if weather_corr_df.empty:
+            st.warning("Không có dữ liệu thời tiết cho giai đoạn đã chọn.")
+        else:
+            weather_cols = st.columns(2)
+            with weather_cols[0]:
+                st.markdown("**Nhu cầu vs. Nhiệt độ (F)**")
+                st.scatter_chart(weather_corr_df, x="temp_f", y="daily_demand")
+            with weather_cols[1]:
+                st.markdown("**Nhu cầu vs. Lượng mưa (mm)**")
+                st.scatter_chart(weather_corr_df, x="precip_mm", y="daily_demand")
 
 with tab_zones:
     st.markdown("<div class='mp-section-title'>Hiệu suất theo zone</div>", unsafe_allow_html=True)
@@ -1025,13 +1565,22 @@ with tab_zones:
     if zone_df.empty:
         st.warning("Không có dữ liệu tổng hợp zone.")
     else:
+        st.markdown("<br><div class='mp-section-title'>Xu hướng các Zone nổi bật</div>", unsafe_allow_html=True)
+        st.caption("Tổng nhu cầu hàng tháng của Top 5 Zone hàng đầu.")
+        if zone_trend_df.empty:
+            st.info("Không đủ dữ liệu cho biểu đồ xu hướng.")
+        else:
+            pivoted_trend = zone_trend_df.pivot(index="pickup_year_month", columns="pickup_zone", values="total_demand").fillna(0)
+            st.line_chart(pivoted_trend)
+            
+        visible_zone_df = zone_df.head(zone_limit).copy()
         borough_df = (
             zone_df.groupby("pickup_borough", as_index=False)
             .agg(total_demand=("total_demand", "sum"), active_hours=("active_hours", "sum"))
             .sort_values("total_demand", ascending=False)
         )
 
-        zone_top = zone_df.sort_values("total_demand", ascending=False).head(10)
+        zone_top = visible_zone_df.head(10)
         zone_cols = st.columns([1.15, 0.95])
         with zone_cols[0]:
             st.markdown(
@@ -1040,7 +1589,7 @@ with tab_zones:
                     "Các zone ưu tiên cho kế hoạch cung ứng và giám sát dịch vụ.",
                     zone_top["pickup_zone"].astype(str).tolist(),
                     zone_top["total_demand"].astype(float).tolist(),
-                    accent="#1d4ed8",
+                    accent="#0B60AB",
                 ),
                 unsafe_allow_html=True,
             )
@@ -1051,12 +1600,12 @@ with tab_zones:
                     "Mức tập trung ở cấp borough theo điểm đón.",
                     borough_df["pickup_borough"].astype(str).tolist(),
                     borough_df["total_demand"].astype(float).tolist(),
-                    accent="#0f766e",
+                    accent="#475569",
                 ),
                 unsafe_allow_html=True,
             )
 
-        zone_view = zone_df[[
+        zone_view = visible_zone_df[[
             "zone_rank",
             "pickup_borough",
             "pickup_zone",
@@ -1067,8 +1616,8 @@ with tab_zones:
             "demand_share",
             "demand_intensity",
         ]].copy()
-        zone_view["demand_share"] = (zone_view["demand_share"] * 100).round(2).astype(str) + "%"
-        zone_view["demand_intensity"] = zone_view["demand_intensity"].round(2)
+        zone_view["demand_share"] = (zone_view["demand_share"].fillna(0) * 100).round(2).astype(str) + "%"
+        zone_view["demand_intensity"] = zone_view["demand_intensity"].fillna(0).round(2)
         st.markdown(
             render_table_panel(
                 "Snapshot hiệu suất zone",
@@ -1087,7 +1636,7 @@ with tab_zones:
         st.dataframe(zone_view, use_container_width=True, hide_index=True)
         st.download_button(
             "Tải CSV tổng hợp zone",
-            data=df_to_csv(zone_df),
+            data=df_to_csv(visible_zone_df),
             file_name=f"zone_summary_top_{zone_limit}.csv",
             mime="text/csv",
         )
@@ -1098,16 +1647,32 @@ with tab_payments:
     if payment_df.empty:
         st.warning("Không có dữ liệu thanh toán/tip cho giai đoạn đã chọn.")
     else:
+        payment_weighted = payment_df.assign(
+            fare_total=payment_df["avg_fare_amount"] * payment_df["trip_count"],
+            tip_pct_total=payment_df["avg_tip_percent"] * payment_df["trip_count"],
+        )
         payment_monthly = (
-            payment_df.groupby("pickup_year_month", as_index=False)
-            .agg(trip_count=("trip_count", "sum"), avg_tip_percent=("avg_tip_percent", "mean"), avg_fare_amount=("avg_fare_amount", "mean"))
+            payment_weighted.groupby("pickup_year_month", as_index=False)
+            .agg(
+                trip_count=("trip_count", "sum"),
+                fare_total=("fare_total", "sum"),
+                tip_pct_total=("tip_pct_total", "sum"),
+            )
             .sort_values("pickup_year_month")
         )
-        payment_mix = payment_df.groupby("payment_type", as_index=False).agg(
+        payment_monthly["avg_fare_amount"] = (
+            payment_monthly["fare_total"] / payment_monthly["trip_count"]
+        )
+        payment_monthly["avg_tip_percent"] = (
+            payment_monthly["tip_pct_total"] / payment_monthly["trip_count"]
+        )
+        payment_mix = payment_weighted.groupby("payment_type", as_index=False).agg(
             trip_count=("trip_count", "sum"),
-            avg_fare_amount=("avg_fare_amount", "mean"),
-            avg_tip_percent=("avg_tip_percent", "mean"),
+            fare_total=("fare_total", "sum"),
+            tip_pct_total=("tip_pct_total", "sum"),
         ).sort_values("trip_count", ascending=False)
+        payment_mix["avg_fare_amount"] = payment_mix["fare_total"] / payment_mix["trip_count"]
+        payment_mix["avg_tip_percent"] = payment_mix["tip_pct_total"] / payment_mix["trip_count"]
 
         payment_cols = st.columns([1.15, 0.95])
         with payment_cols[0]:
@@ -1117,8 +1682,8 @@ with tab_payments:
                     "Xu hướng số chuyến và tỷ lệ tip trung bình trong giai đoạn đã chọn.",
                     payment_monthly["pickup_year_month"].astype(str).tolist(),
                     [
-                        ("Số chuyến", payment_monthly["trip_count"].astype(float).tolist(), "#1d4ed8"),
-                        ("Tip TB %", payment_monthly["avg_tip_percent"].astype(float).tolist(), "#dc2626"),
+                        ("Số chuyến", payment_monthly["trip_count"].astype(float).tolist(), "#0B60AB"),
+                        ("Tip TB %", payment_monthly["avg_tip_percent"].astype(float).tolist(), "#EF4444"),
                     ],
                 ),
                 unsafe_allow_html=True,
@@ -1130,7 +1695,7 @@ with tab_payments:
                     "Hữu ích để đánh giá mức độ dùng thanh toán không tiền mặt và chất lượng giao dịch.",
                     payment_mix["payment_type"].astype(str).tolist(),
                     payment_mix["trip_count"].astype(float).tolist(),
-                    accent="#7c3aed",
+                    accent="#0B60AB",
                 ),
                 unsafe_allow_html=True,
             )
@@ -1185,37 +1750,77 @@ with tab_ml:
     if ml_df.empty:
         st.warning(f"Chưa tìm thấy file dự đoán tại {ML_PREDICTIONS_PATH}. Hãy chạy lại `python demo/predict_demand_demo.py` trong thư mục `ml/`.")
     else:
-        # ─── BỘ LỌC ĐỘNG TƯƠNG TÁC TẠI TAB ML ───
+        # Filters are applied only on submit so chart/table results remain stable
+        # while the user edits multiple controls.
         st.markdown("<div style='font-weight:700; margin-bottom:0.4rem;'>🔍 Bộ lọc dự báo động</div>", unsafe_allow_html=True)
-        filter_cols = st.columns([1, 1, 1, 1])
-        
-        # 1. Lọc theo Zone
         zone_names_list = ["Tất cả"] + sorted(list(ml_df["zone_name"].dropna().unique()))
-        selected_zone = filter_cols[0].selectbox("Khu vực (Zone)", options=zone_names_list, index=0, key="ml_zone_filter")
-        
-        # 2. Lọc theo loại Zone
         zone_types = ["Tất cả", "Sân bay", "Manhattan core", "Bình thường"]
-        selected_zone_type = filter_cols[1].selectbox("Loại Zone", options=zone_types, index=0, key="ml_zone_type_filter")
-        
-        # 3. Lọc theo Thời tiết
         weather_options = ["Tất cả", "Chỉ ngày mưa (>0mm)", "Chỉ ngày lạnh buốt (<36°F)", "Khô ráo và ấm"]
-        selected_weather = filter_cols[2].selectbox("Thời tiết", options=weather_options, index=0, key="ml_weather_filter")
-        
-        # 4. Lọc theo Loại ngày
         day_options = ["Tất cả", "Ngày thường (Thứ 2-6)", "Cuối tuần (Thứ 7, CN)", "Ngày lễ"]
-        selected_day_type = filter_cols[3].selectbox("Phân loại ngày", options=day_options, index=0, key="ml_day_type_filter")
-        
-        # Slider chọn khoảng ngày trong tháng 12
         min_date = ml_df["pickup_hour"].min().date()
         max_date = ml_df["pickup_hour"].max().date()
-        selected_date_range = st.slider(
-            "Chọn khoảng thời gian dự báo (Tháng 12/2024)",
-            min_value=min_date,
-            max_value=max_date,
-            value=(min_date, max_date),
-            format="DD/MM",
-            key="ml_date_range_slider"
+        st.session_state.setdefault(
+            "ml_applied_filters",
+            {
+                "zone": "Tất cả",
+                "zone_type": "Tất cả",
+                "weather": "Tất cả",
+                "day_type": "Tất cả",
+                "date_range": (min_date, max_date),
+            },
         )
+
+        with st.form("ml_forecast_filter_form", clear_on_submit=False):
+            filter_cols = st.columns([1, 1, 1, 1])
+            selected_zone_input = filter_cols[0].selectbox(
+                "Khu vực (Zone)",
+                options=zone_names_list,
+                key="ml_zone_filter",
+            )
+            selected_zone_type_input = filter_cols[1].selectbox(
+                "Loại Zone",
+                options=zone_types,
+                key="ml_zone_type_filter",
+            )
+            selected_weather_input = filter_cols[2].selectbox(
+                "Thời tiết",
+                options=weather_options,
+                key="ml_weather_filter",
+            )
+            selected_day_type_input = filter_cols[3].selectbox(
+                "Phân loại ngày",
+                options=day_options,
+                key="ml_day_type_filter",
+            )
+            selected_date_range_input = st.slider(
+                "Chọn khoảng thời gian dự báo (Tháng 12/2024)",
+                min_value=min_date,
+                max_value=max_date,
+                value=(min_date, max_date),
+                format="DD/MM",
+                key="ml_date_range_slider",
+            )
+            apply_ml_filters = st.form_submit_button(
+                "Dự báo ML với bộ lọc này",
+                type="primary",
+                use_container_width=True,
+            )
+
+        if apply_ml_filters:
+            st.session_state["ml_applied_filters"] = {
+                "zone": selected_zone_input,
+                "zone_type": selected_zone_type_input,
+                "weather": selected_weather_input,
+                "day_type": selected_day_type_input,
+                "date_range": selected_date_range_input,
+            }
+
+        applied_filters = st.session_state["ml_applied_filters"]
+        selected_zone = applied_filters["zone"]
+        selected_zone_type = applied_filters["zone_type"]
+        selected_weather = applied_filters["weather"]
+        selected_day_type = applied_filters["day_type"]
+        selected_date_range = applied_filters["date_range"]
 
         # Tiến hành lọc dữ liệu
         filtered_ml_df = ml_df.copy()
@@ -1335,8 +1940,8 @@ with tab_ml:
                         f"Profile 24 giờ trung bình trên tập dữ liệu đang chọn lọc ({len(filtered_ml_df):,} dòng).",
                         hourly_ml["hour_of_day"].astype(str).str.zfill(2).tolist(),
                         [
-                            ("Thực tế", hourly_ml["actual_mean"].astype(float).tolist(), "#1d4ed8"),
-                            ("Dự báo", hourly_ml["predicted_mean"].astype(float).tolist(), "#dc2626"),
+                            ("Thực tế", hourly_ml["actual_mean"].astype(float).tolist(), "#0B60AB"),
+                            ("Dự báo", hourly_ml["predicted_mean"].astype(float).tolist(), "#EF4444"),
                         ],
                     ),
                     unsafe_allow_html=True,
@@ -1348,8 +1953,8 @@ with tab_ml:
                         "Xu hướng tổng nhu cầu qua các ngày trong khoảng thời gian đang lọc.",
                         [d.strftime("%d/%m") for d in daily_ml["pickup_date"]],
                         [
-                            ("Thực tế", daily_ml["actual_sum"].astype(float).tolist(), "#10b981"),
-                            ("Dự báo", daily_ml["predicted_sum"].astype(float).tolist(), "#f59e0b"),
+                            ("Thực tế", daily_ml["actual_sum"].astype(float).tolist(), "#0B60AB"),
+                            ("Dự báo", daily_ml["predicted_sum"].astype(float).tolist(), "#EF4444"),
                         ],
                     ),
                     unsafe_allow_html=True,
@@ -1486,206 +2091,244 @@ with tab_ml:
 
 with tab_simulator:
     st.markdown("<div class='mp-section-title'>Mô phỏng & Dự báo hành trình (Fare & Tip Simulator)</div>", unsafe_allow_html=True)
-    st.caption("Nhập các thông số chuyến đi giả định để dự toán ngay lập tức Giá cước & tỷ lệ Tip từ các mô hình XGBoost lưu trên GCP VM thông qua API.")
+    st.caption("Backend tự tính quãng đường Haversine từ centroid taxi zone và xây dựng đúng feature schema trước khi gọi mô hình.")
 
     all_zones = load_all_zones()
     if not all_zones:
-        all_zones = [{"zone_id": k, "zone_name": v, "borough": "Manhattan"} for k, v in ZONE_NAMES.items()]
-    
-    zone_options = {
-    z["zone_name"]: z["zone_id"]
-    for z in all_zones
-    if z.get("zone_name")
-}
-    zone_names_sorted = sorted(list(zone_options.keys()))
+        st.error("Không tải được taxi zone lookup từ Dashboard API.")
+    else:
+        zone_by_id = {int(zone["zone_id"]): zone for zone in all_zones}
+        zone_ids = sorted(
+            zone_by_id,
+            key=lambda zone_id: (
+                zone_by_id[zone_id].get("borough") or "",
+                zone_by_id[zone_id].get("zone_name") or "",
+                zone_id,
+            ),
+        )
 
-    sim_cols = st.columns([1.1, 0.9])
-    
-    with sim_cols[0]:
-        st.markdown("<div style='font-weight:700; margin-bottom:0.4rem;'>📍 Cấu hình lộ trình hành trình</div>", unsafe_allow_html=True)
-        route_subcols = st.columns(2)
-        
-        # Default JFK to Midtown Center
-        default_pu_idx = zone_names_sorted.index("JFK Airport") if "JFK Airport" in zone_names_sorted else 0
-        default_do_idx = zone_names_sorted.index("Midtown Center") if "Midtown Center" in zone_names_sorted else 0
-        
-        pu_name = route_subcols[0].selectbox("Khu vực đón (Pickup Zone)", options=zone_names_sorted, index=default_pu_idx)
-        do_name = route_subcols[1].selectbox("Khu vực trả (Dropoff Zone)", options=zone_names_sorted, index=default_do_idx)
-        
-        trip_distance = st.number_input("Quãng đường ước tính (miles)", min_value=0.1, max_value=150.0, value=13.5, step=0.5)
-        
-        st.markdown("<div style='font-weight:700; margin-top:0.8rem; margin-bottom:0.4rem;'>🕒 Thời gian & Hình thức</div>", unsafe_allow_html=True)
-        time_subcols = st.columns(3)
-        passenger_count = time_subcols[0].selectbox("Số hành khách", options=[1, 2, 3, 4, 5, 6], index=0)
-        ratecode_id = time_subcols[1].selectbox("Mã biểu giá (RateCode)", options=[1, 2, 3, 4, 5], index=0, 
-                                                format_func=lambda x: {1: "Rate 1: Standard", 2: "Rate 2: JFK Airport", 3: "Rate 3: Newark", 4: "Rate 4: Nassau", 5: "Rate 5: Negotiated"}[x])
-        payment_type = time_subcols[2].selectbox("Hình thức thanh toán", options=[1, 2], index=0,
-                                                 format_func=lambda x: PAYMENT_TYPE_LABELS.get(x, f"Loại {x}"))
-        
-        date_subcols = st.columns(3)
-        sim_month = date_subcols[0].selectbox("Tháng hành trình", options=[11, 12], index=1)
-        sim_day_of_week = date_subcols[1].selectbox("Thứ trong tuần", options=[0, 1, 2, 3, 4, 5, 6], index=0,
-                                                    format_func=lambda x: {0: "Thứ Hai", 1: "Thứ Ba", 2: "Thứ Tư", 3: "Thứ Năm", 4: "Thứ Sáu", 5: "Thứ Bảy", 6: "Chủ Nhật"}[x])
-        sim_hour = date_subcols[2].selectbox("Giờ xuất hành", options=list(range(24)), index=8)
-        
-        st.markdown("<div style='font-weight:700; margin-top:0.8rem; margin-bottom:0.4rem;'>☀️ Bối cảnh thời tiết</div>", unsafe_allow_html=True)
-        weather_subcols = st.columns(2)
-        temperature_f = weather_subcols[0].slider("Nhiệt độ ngoài trời (°F)", min_value=0.0, max_value=100.0, value=34.0, step=1.0)
-        precipitation_mm = weather_subcols[1].slider("Lượng mưa tích lũy (mm)", min_value=0.0, max_value=30.0, value=0.0, step=0.1)
+        def zone_label(zone_id: int) -> str:
+            zone = zone_by_id[zone_id]
+            return f"{zone['zone_name']} ({zone['borough']}) [ID {zone_id}]"
 
-        is_rush_hour_val = 1 if sim_hour in [7, 8, 9, 17, 18, 19] else 0
-        is_weekend_val = 1 if sim_day_of_week in [5, 6] else 0
-        is_raining_val = 1 if precipitation_mm > 0.0 else 0
-        is_cold_val = 1 if temperature_f < 36.0 else 0
+        def default_zone_id(zone_name: str, fallback: int) -> int:
+            return next(
+                (zone_id for zone_id, zone in zone_by_id.items() if zone.get("zone_name") == zone_name),
+                fallback,
+            )
 
-        st.markdown("<div style='font-size:0.82rem; color:#64748b; font-weight:600;'>Đặc trưng suy luận tự động:</div>", unsafe_allow_html=True)
-        badges = [
-            ("Giờ cao điểm", "Có" if is_rush_hour_val else "Không"),
-            ("Ngày cuối tuần", "Có" if is_weekend_val else "Không"),
-            ("Có mưa tuyết", "Có" if is_raining_val else "Không"),
-            ("Thời tiết lạnh", "Có" if is_cold_val else "Không"),
-        ]
-        st.markdown(render_badge_strip(badges), unsafe_allow_html=True)
-        
-        btn_predict = st.button("💰 Chạy ước lượng chi phí", type="primary", use_container_width=True)
+        st.session_state.setdefault("sim_pickup_zone_id", default_zone_id("JFK Airport", zone_ids[0]))
+        st.session_state.setdefault("sim_dropoff_zone_id", default_zone_id("Midtown Center", zone_ids[0]))
+        st.session_state.setdefault("sim_passenger_count", 1)
+        st.session_state.setdefault("sim_ratecode_id", 1)
+        st.session_state.setdefault("sim_payment_type", 1)
+        st.session_state.setdefault("sim_month", 12)
+        st.session_state.setdefault("sim_day_of_week", 2)
+        st.session_state.setdefault("sim_hour", 8)
+        st.session_state.setdefault("sim_temperature_f", 34.0)
+        st.session_state.setdefault("sim_precipitation_mm", 0.0)
+        st.session_state.setdefault("sim_result", None)
+        st.session_state.setdefault("sim_error", None)
 
-    with sim_cols[1]:
-        st.markdown("<div style='font-weight:700; margin-bottom:0.4rem;'>🧾 Hóa đơn điện tử ước tính</div>", unsafe_allow_html=True)
-        if btn_predict:
-            payload = {
-                "trip_distance": float(trip_distance),
-                "pu_location_id": int(zone_options[pu_name]),
-                "do_location_id": int(zone_options[do_name]),
-                "passenger_count": int(passenger_count),
-                "ratecode_id": int(ratecode_id),
-                "hour": int(sim_hour),
-                "day_of_week": int(sim_day_of_week),
-                "month": int(sim_month),
-                "temperature_f": float(temperature_f),
-                "precipitation_mm": float(precipitation_mm),
-                "payment_type": int(payment_type)
+        route_cols = st.columns(2)
+        pickup_zone_id = route_cols[0].selectbox(
+            "Khu vực đón (Pickup Zone)",
+            options=zone_ids,
+            format_func=zone_label,
+            key="sim_pickup_zone_id",
+        )
+        dropoff_zone_id = route_cols[1].selectbox(
+            "Khu vực trả (Dropoff Zone)",
+            options=zone_ids,
+            format_func=zone_label,
+            key="sim_dropoff_zone_id",
+        )
+
+        route_preview = None
+        route_error = None
+        try:
+            route_preview = load_route_estimate(pickup_zone_id, dropoff_zone_id)
+        except requests.RequestException as exc:
+            route_error = f"Không tính được quãng đường từ Dashboard API: {exc}"
+
+        if route_preview and route_preview.get("can_predict"):
+            st.info(
+                f"Quãng đường ước tính: **{route_preview['trip_distance']:.2f} miles** "
+                f"(Haversine giữa centroid hai taxi zone, không phải khoảng cách đường bộ)."
+            )
+        elif route_preview and route_preview.get("same_zone"):
+            st.warning(
+                "Pickup và dropoff cùng một zone. Centroid distance bằng 0 nên không thể truyền vào model đã train với trip_distance > 0."
+            )
+        elif route_error:
+            st.error(route_error)
+
+        sim_cols = st.columns([1.1, 0.9])
+        with sim_cols[0]:
+            with st.form("fare_tip_simulator_form", clear_on_submit=False):
+                st.markdown("<div style='font-weight:700; margin-bottom:0.4rem;'>Cấu hình mô phỏng</div>", unsafe_allow_html=True)
+                time_subcols = st.columns(3)
+                passenger_count = time_subcols[0].selectbox(
+                    "Số hành khách",
+                    options=[1, 2, 3, 4, 5, 6],
+                    key="sim_passenger_count",
+                )
+                ratecode_id = time_subcols[1].selectbox(
+                    "Mã biểu giá",
+                    options=[1, 2, 3, 4, 5],
+                    key="sim_ratecode_id",
+                    format_func=lambda value: {
+                        1: "Standard",
+                        2: "JFK Airport",
+                        3: "Newark",
+                        4: "Nassau",
+                        5: "Negotiated",
+                    }[value],
+                )
+                payment_type = time_subcols[2].selectbox(
+                    "Thanh toán",
+                    options=[1, 2],
+                    key="sim_payment_type",
+                    format_func=lambda value: PAYMENT_TYPE_LABELS.get(value, f"Loại {value}"),
+                )
+
+                date_subcols = st.columns(3)
+                sim_month = date_subcols[0].selectbox(
+                    "Tháng",
+                    options=list(range(1, 13)),
+                    key="sim_month",
+                )
+                sim_day_of_week = date_subcols[1].selectbox(
+                    "Thứ trong tuần",
+                    options=[1, 2, 3, 4, 5, 6, 7],
+                    key="sim_day_of_week",
+                    format_func=lambda value: {
+                        1: "Chủ Nhật",
+                        2: "Thứ Hai",
+                        3: "Thứ Ba",
+                        4: "Thứ Tư",
+                        5: "Thứ Năm",
+                        6: "Thứ Sáu",
+                        7: "Thứ Bảy",
+                    }[value],
+                )
+                sim_hour = date_subcols[2].selectbox(
+                    "Giờ xuất hành",
+                    options=list(range(24)),
+                    key="sim_hour",
+                )
+
+                weather_subcols = st.columns(2)
+                temperature_f = weather_subcols[0].slider(
+                    "Nhiệt độ (°F)",
+                    min_value=0.0,
+                    max_value=100.0,
+                    step=1.0,
+                    key="sim_temperature_f",
+                )
+                precipitation_mm = weather_subcols[1].slider(
+                    "Lượng mưa (mm)",
+                    min_value=0.0,
+                    max_value=30.0,
+                    step=0.1,
+                    key="sim_precipitation_mm",
+                )
+
+                run_simulation = st.form_submit_button(
+                    "Tính Fare & Tip",
+                    type="primary",
+                    use_container_width=True,
+                    disabled=not bool(route_preview and route_preview.get("can_predict")),
+                )
+
+            if run_simulation:
+                payload = {
+                    "pu_location_id": int(pickup_zone_id),
+                    "do_location_id": int(dropoff_zone_id),
+                    "passenger_count": int(passenger_count),
+                    "ratecode_id": int(ratecode_id),
+                    "hour": int(sim_hour),
+                    "day_of_week": int(sim_day_of_week),
+                    "month": int(sim_month),
+                    "temperature_f": float(temperature_f),
+                    "precipitation_mm": float(precipitation_mm),
+                    "payment_type": int(payment_type),
+                }
+                try:
+                    with st.spinner("Đang tính quãng đường và chạy mô hình Fare/Tip..."):
+                        response = requests.post(
+                            f"{API_URL}/api/predict/fare-tip",
+                            json=payload,
+                            timeout=30,
+                        )
+                        response.raise_for_status()
+                    st.session_state["sim_result"] = response.json()
+                    st.session_state["sim_error"] = None
+                except requests.RequestException as exc:
+                    detail = str(exc)
+                    if getattr(exc, "response", None) is not None:
+                        try:
+                            detail = exc.response.json().get("detail", detail)
+                        except ValueError:
+                            pass
+                    st.session_state["sim_error"] = detail
+
+            derived_preview = {
+                "Giờ cao điểm": sim_hour in [7, 8, 9, 17, 18, 19],
+                "Tín hiệu weekend của model": sim_day_of_week in [5, 6],
+                "Có mưa": precipitation_mm > 0,
+                "Thời tiết lạnh": temperature_f < 36,
             }
-            
-            try:
-                response = requests.post(f"{API_URL}/api/predict/fare-tip", json=payload, timeout=15)
-                response.raise_for_status()
-                res = response.json()
-                
-                pred_fare = res["predicted_fare"]
-                pred_tip_pct = res["predicted_tip_percent"]
-                pred_tip_amount = res["predicted_tip_amount"]
-                total_amount = res["total_amount"]
-                model_used = res["model_used"]
-                
-                model_badge = "🟢 XGBoost Model (Live)" if model_used else "⚠️ Heuristic Fallback (Offline)"
-                
-                tip_note = ""
-                if payment_type != 1:
-                    tip_note = "<br><span style='color:#b45309; font-size:0.8rem;'>*Lưu ý: Chỉ áp dụng mô hình dự đoán tip cho thanh toán Thẻ (Credit Card)</span>"
-                
-                components.html(
-                    f"""
-                    <div style="background:#ffffff; border:1px solid rgba(37,48,63,0.12); border-radius:12px; padding:1.4rem; box-shadow:0 10px 15px -3px rgba(0,0,0,0.05); font-family: 'Courier New', Courier, monospace; color:#1e293b;">
-                        <h3 style="text-align:center; margin-top:0; color:#0f172a; border-bottom:2px dashed #e2e8f0; padding-bottom:0.8rem; letter-spacing:1px;">METROPULSE TAXI RECEIPT</h3>
-                        
-                        <div style="display:flex; justify-content:space-between; margin:0.6rem 0;">
-                            <span>Điểm đón (Pickup):</span>
-                            <strong>{pu_name}</strong>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; margin:0.6rem 0;">
-                            <span>Điểm trả (Dropoff):</span>
-                            <strong>{do_name}</strong>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; margin:0.6rem 0;">
-                            <span>Khoảng cách hành trình:</span>
-                            <strong>{trip_distance:.2f} miles</strong>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; margin:0.6rem 0;">
-                            <span>Số hành khách đi cùng:</span>
-                            <strong>{passenger_count} người</strong>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; margin:0.6rem 0; border-bottom:1px solid #e2e8f0; padding-bottom:0.5rem;">
-                            <span>Hình thức thanh toán:</span>
-                            <strong>{PAYMENT_TYPE_LABELS.get(payment_type)}</strong>
-                        </div>
-                        
-                        <div style="display:flex; justify-content:space-between; margin:0.8rem 0; font-size:1.15rem;">
-                            <span>Giá cước gốc (Fare Amount):</span>
-                            <strong style="color:#0f172a;">${pred_fare:.2f}</strong>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; margin:0.8rem 0;">
-                            <span>Tiền Tip đề xuất ({pred_tip_pct:.1f}%):</span>
-                            <strong style="color:#0f766e;">+${pred_tip_amount:.2f}</strong>
-                        </div>
-                        
-                        <div style="display:flex; justify-content:space-between; margin:0.9rem 0 0; padding-top:1rem; border-top:2px dashed #cbd5e1; font-size:1.45rem; font-weight:bold;">
-                            <span>TỔNG THÀNH TIỀN:</span>
-                            <strong style="color:#1d4ed8;">${total_amount:.2f}</strong>
-                        </div>
-                        
-                        <div style="text-align:center; margin-top:1.4rem; font-size:0.75rem; color:#64748b; border-top:1px solid #f1f5f9; padding-top:0.8rem; line-height:1.4;">
-                            Suy luận: {model_badge}{tip_note}<br>
-                            Múi giờ dữ liệu chuẩn: America/New_York
-                        </div>
+            st.markdown(
+                render_badge_strip(
+                    [(label, "Có" if enabled else "Không") for label, enabled in derived_preview.items()]
+                ),
+                unsafe_allow_html=True,
+            )
+
+        with sim_cols[1]:
+            st.markdown("<div style='font-weight:700; margin-bottom:0.4rem;'>Kết quả mô phỏng gần nhất</div>", unsafe_allow_html=True)
+            if st.session_state.get("sim_error"):
+                st.error(f"Không thể chạy mô phỏng: {st.session_state['sim_error']}")
+
+            result = st.session_state.get("sim_result")
+            if result:
+                pickup_result = result["pickup_zone"]
+                dropoff_result = result["dropoff_zone"]
+                model_badge = "XGBoost Model" if result["model_used"] else "Heuristic fallback"
+                st.markdown(
+                    render_metric_strip(
+                        [
+                            ("Quãng đường", f"{result['trip_distance']:.2f} mi", result["distance_method"]),
+                            ("Fare dự báo", f"${result['predicted_fare']:.2f}", model_badge),
+                            ("Tip dự báo", f"{result['predicted_tip_percent']:.2f}%", f"${result['predicted_tip_amount']:.2f}"),
+                            ("Tổng thanh toán", f"${result['total_amount']:.2f}", PAYMENT_TYPE_LABELS.get(result["prediction_input"]["payment_type"], "-")),
+                        ]
+                    ),
+                    unsafe_allow_html=True,
+                )
+                st.markdown(
+                    render_signal_panel(
+                        "Chi tiết route và feature",
+                        [
+                            f"Pickup: {pickup_result['zone_name']} ({pickup_result['borough']}) [ID {pickup_result['zone_id']}].",
+                            f"Dropoff: {dropoff_result['zone_name']} ({dropoff_result['borough']}) [ID {dropoff_result['zone_id']}].",
+                            f"Feature schema: {', '.join(result['feature_columns'])}.",
+                            f"Derived features: {result['derived_features']}.",
+                        ],
+                    ),
+                    unsafe_allow_html=True,
+                )
+            else:
+                st.markdown(
+                    """
+                    <div class="mp-empty" style="text-align:center; padding:3rem 1.5rem;">
+                        Chọn route, nhập thông số và bấm “Tính Fare & Tip”.
+                        Kết quả sẽ được giữ nguyên khi bạn thay đổi widget cho đến lần tính tiếp theo.
                     </div>
                     """,
-                    height=550,
-                    scrolling=False
+                    unsafe_allow_html=True,
                 )
-                
-                # Show model validation metrics
-                all_metrics = load_all_ml_metrics()
-                fare_m = all_metrics.get("fare", {})
-                tip_m = all_metrics.get("tip", {})
-                
-                if fare_m or tip_m:
-                    st.write("")
-                    st.markdown("<div style='font-weight:700; font-size:0.9rem; margin-bottom:0.4rem;'>📊 Sai số mô hình huấn luyện (Test Set)</div>", unsafe_allow_html=True)
-                    subcols = st.columns(2)
-                    if fare_m:
-                        subcols[0].markdown(
-                            f"""
-                            <div style="background:#ffffff; border:1px solid rgba(37,48,63,0.08); border-radius:8px; padding:0.6rem 0.8rem; box-shadow:0 1px 2px rgba(0,0,0,0.02);">
-                                <div style="color:#64748b; font-size:0.75rem; font-weight:600; text-transform:uppercase;">Mô hình Fare</div>
-                                <div style="font-size:1.05rem; font-weight:700; color:#1e293b; margin:0.2rem 0;">R²: {fare_m.get('r2') or '-'}</div>
-                                <div style="font-size:0.76rem; color:#475569;">
-                                    RMSE: {fare_m.get('rmse') or '-'} USD<br>
-                                    MAE: {fare_m.get('mae') or '-'} USD
-                                </div>
-                            </div>
-                            """,
-                            unsafe_allow_html=True
-                        )
-                    if tip_m:
-                        subcols[1].markdown(
-                            f"""
-                            <div style="background:#ffffff; border:1px solid rgba(37,48,63,0.08); border-radius:8px; padding:0.6rem 0.8rem; box-shadow:0 1px 2px rgba(0,0,0,0.02);">
-                                <div style="color:#64748b; font-size:0.75rem; font-weight:600; text-transform:uppercase;">Mô hình Tip %</div>
-                                <div style="font-size:1.05rem; font-weight:700; color:#0f766e; margin:0.2rem 0;">R²: {tip_m.get('r2') or '-'}</div>
-                                <div style="font-size:0.76rem; color:#475569;">
-                                    RMSE: {tip_m.get('rmse') or '-'}%<br>
-                                    MAE: {tip_m.get('mae') or '-'}%
-                                </div>
-                            </div>
-                            """,
-                            unsafe_allow_html=True
-                        )
-            
-            except Exception as e:
-                st.error(f"Không thể kết nối đến Dashboard API hoặc suy luận lỗi: {e}")
-        else:
-            st.markdown(
-                """
-                <div class="mp-empty" style="text-align:center; padding:3rem 1.5rem; border:2px dashed rgba(37,48,63,0.1); border-radius:12px; background:#f8fafc;">
-                    <div style="font-size:2.5rem; margin-bottom:0.8rem;">🚕</div>
-                    <div style="font-weight:600; color:#334155; font-size:0.95rem;">Chưa có dữ liệu tính toán</div>
-                    <div style="color:#64748b; font-size:0.86rem; margin-top:0.3rem; max-width:280px; margin-left:auto; margin-right:auto;">
-                        Vui lòng nhập cấu hình hành trình bên trái và nhấn nút "Chạy ước lượng chi phí" để bắt đầu.
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
 
 
 if show_raw_tables:

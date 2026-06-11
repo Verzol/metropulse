@@ -60,6 +60,7 @@ with DAG(
             "test -f sql/postgres/init_warehouse.sql && "
             "test -f sql/postgres/promote_gold_demand_features.sql && "
             "test -f sql/postgres/promote_gold_fare_tip_features.sql && "
+            "test -f sql/postgres/migrate_dashboard_zone_summary_monthly.sql && "
             "test -f sql/postgres/promote_dashboard_marts.sql"
         ),
     )

@@ -17,25 +17,45 @@ TRUNCATE TABLE mart.dashboard_payment_tip_summary;
 
 INSERT INTO mart.dashboard_hourly_demand_kpi
 SELECT
-    pickup_hour, hour, day_of_week, month, pickup_year_month, total_demand,
-    active_zones, avg_demand_per_active_zone, max_zone_hour_demand,
-    avg_temperature_f, avg_precipitation_mm, source_gold_processed_timestamp,
+    pickup_hour, hour, day_of_week, month, pickup_year_month::varchar(7), total_demand::bigint,
+    active_zones::integer, avg_demand_per_active_zone::double precision, max_zone_hour_demand::integer,
+    avg_temperature_f::double precision, avg_precipitation_mm::double precision, source_gold_processed_timestamp,
     dashboard_processed_timestamp
 FROM staging.dashboard_hourly_demand_kpi_staging;
 
-INSERT INTO mart.dashboard_zone_summary
-SELECT
-    pu_location_id, pickup_borough, pickup_zone, pickup_latitude, pickup_longitude,
+INSERT INTO mart.dashboard_zone_summary (
+    pu_location_id, pickup_borough, pickup_zone,
+    pickup_latitude, pickup_longitude,
     total_demand, avg_hourly_demand, max_hourly_demand, active_hours,
-    first_pickup_hour, last_pickup_hour, avg_temperature_f, avg_precipitation_mm,
-    source_gold_processed_timestamp, dashboard_processed_timestamp
+    first_pickup_hour, last_pickup_hour,
+    avg_temperature_f, avg_precipitation_mm,
+    source_gold_processed_timestamp, dashboard_processed_timestamp,
+    pickup_year_month
+)
+SELECT
+    pu_location_id::smallint,
+    pickup_borough,
+    pickup_zone,
+    pickup_latitude::double precision,
+    pickup_longitude::double precision,
+    total_demand::bigint,
+    avg_hourly_demand::double precision,
+    max_hourly_demand::integer,
+    active_hours::integer,
+    first_pickup_hour,
+    last_pickup_hour,
+    avg_temperature_f::double precision,
+    avg_precipitation_mm::double precision,
+    source_gold_processed_timestamp,
+    dashboard_processed_timestamp,
+    pickup_year_month::varchar(7)
 FROM staging.dashboard_zone_summary_staging;
 
 INSERT INTO mart.dashboard_payment_tip_summary
 SELECT
-    pickup_year_month, payment_type, trip_count, avg_fare_amount, avg_tip_amount,
-    avg_tip_percent, median_tip_percent, median_fare_amount, avg_trip_distance,
-    min_fare_amount, max_fare_amount, min_tip_percent, max_tip_percent, month,
+    pickup_year_month::varchar(7), payment_type, trip_count::bigint, avg_fare_amount::double precision, avg_tip_amount::double precision,
+    avg_tip_percent::double precision, median_tip_percent::double precision, median_fare_amount::double precision, avg_trip_distance::double precision,
+    min_fare_amount::double precision, max_fare_amount::double precision, min_tip_percent::double precision, max_tip_percent::double precision, month,
     source_gold_processed_timestamp, dashboard_processed_timestamp
 FROM staging.dashboard_payment_tip_summary_staging;
 

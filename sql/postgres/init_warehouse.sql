@@ -94,7 +94,8 @@ CREATE INDEX IF NOT EXISTS dashboard_hourly_demand_month_idx
     ON mart.dashboard_hourly_demand_kpi (pickup_year_month);
 
 CREATE TABLE IF NOT EXISTS mart.dashboard_zone_summary (
-    pu_location_id SMALLINT NOT NULL PRIMARY KEY,
+    pickup_year_month VARCHAR(7) NOT NULL,
+    pu_location_id SMALLINT NOT NULL,
     pickup_borough TEXT,
     pickup_zone TEXT,
     pickup_latitude DOUBLE PRECISION,
@@ -108,8 +109,14 @@ CREATE TABLE IF NOT EXISTS mart.dashboard_zone_summary (
     avg_temperature_f DOUBLE PRECISION NOT NULL,
     avg_precipitation_mm DOUBLE PRECISION NOT NULL,
     source_gold_processed_timestamp TIMESTAMP NOT NULL,
-    dashboard_processed_timestamp TIMESTAMP NOT NULL
+    dashboard_processed_timestamp TIMESTAMP NOT NULL,
+    PRIMARY KEY (pickup_year_month, pu_location_id)
 );
+
+CREATE INDEX IF NOT EXISTS dashboard_zone_summary_month_idx
+    ON mart.dashboard_zone_summary (pickup_year_month);
+CREATE INDEX IF NOT EXISTS dashboard_zone_summary_demand_idx
+    ON mart.dashboard_zone_summary (total_demand DESC);
 
 CREATE TABLE IF NOT EXISTS mart.dashboard_payment_tip_summary (
     pickup_year_month VARCHAR(7) NOT NULL,

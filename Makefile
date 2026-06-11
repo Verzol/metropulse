@@ -23,7 +23,7 @@ help:
 	@echo "  make warehouse-ml-access - Provision and verify read-only ML login"
 	@echo "  make warehouse-dashboard-access - Provision and verify read-only dashboard login"
 	@echo "  make dashboard-api - Run FastAPI dashboard API on 127.0.0.1:8000"
-	@echo "  make dashboard-ui - Run Streamlit dashboard UI on 127.0.0.1:8501"
+	@echo "  make dashboard-ui - Run Streamlit dashboard UI on 0.0.0.0:8501"
 	@echo "  make pgadmin-up    - Start pgAdmin UI for Warehouse inspection"
 	@echo "  make pgadmin-logs  - View pgAdmin logs"
 	@echo ""
@@ -177,7 +177,7 @@ dashboard-ui:
 	else \
 		. .venv/bin/activate; \
 	fi; \
-	streamlit run src/dashboard_app/streamlit_app.py --server.address 127.0.0.1 --server.port 8501
+	streamlit run src/dashboard_app/streamlit_app.py --server.address 0.0.0.0 --server.port 8501
 
 pgadmin-up: warehouse-up
 	@echo "Starting pgAdmin UI for PostgreSQL Warehouse..."
