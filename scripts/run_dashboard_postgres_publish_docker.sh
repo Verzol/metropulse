@@ -39,6 +39,11 @@ docker compose exec -T spark-master bash -c "
     publish_dashboard_to_postgres.py
 "
 
+echo "Migrating dashboard zone mart to monthly grain..."
+docker compose exec -T warehouse-postgres sh -c \
+  'psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB"' \
+  < sql/postgres/migrate_dashboard_zone_summary_monthly.sql
+
 echo "Promoting validated dashboard staging tables into mart schema..."
 docker compose exec -T warehouse-postgres sh -c \
   'psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB"' \

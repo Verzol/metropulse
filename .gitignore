@@ -6,7 +6,9 @@ data/raw/                          # Parquet taxi data (huge, exclude)
 
 # CSV: Exclude all EXCEPT taxi_zone_lookup.csv (needed for app)
 *.csv
-!data/taxi_zone_lookup.csv         # INCLUDE: NYC zone mapping (required)
+# Required NYC taxi zone references.
+!data/taxi_zone_lookup.csv
+!data/taxi_zone_centroids.csv
 
 # Python Environment
 venv/

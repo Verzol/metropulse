@@ -42,10 +42,13 @@ docker compose exec -T spark-master bash -c "
     --conf spark.sql.session.timeZone=America/New_York \
     --conf spark.sql.adaptive.enabled=true \
     --conf spark.sql.adaptive.coalescePartitions.enabled=true \
+    --conf spark.sql.files.maxPartitionBytes=67108864 \
+    --conf spark.network.timeout=600s \
+    --conf spark.executor.heartbeatInterval=30s \
     --driver-memory 4G \
-    --executor-memory 6G \
-    --executor-cores 2 \
-    --total-executor-cores 4 \
+    --executor-memory 8G \
+    --executor-cores 1 \
+    --total-executor-cores 2 \
     --packages org.apache.hadoop:hadoop-aws:3.3.4 \
     --master spark://spark-master:7077 \
     gold_dashboard_marts.py
